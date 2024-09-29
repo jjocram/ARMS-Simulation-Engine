@@ -8,7 +8,7 @@ class Inventories {
     }
 
     fun get(productFamily: ProductFamily): DepletableResource {
-        require(productFamily in inventories) {"ProductFamily $productFamily not in inventories"}
+        require(productFamily in inventories) {".ProductFamily $productFamily not in inventories"}
         return inventories[productFamily]!!
     }
 }

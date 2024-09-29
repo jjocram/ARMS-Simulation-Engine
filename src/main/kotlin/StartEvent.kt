@@ -5,7 +5,7 @@ data class ProductFamilyRequest(val productFamily: ProductFamily, val quantity: 
 class StartEvent(
     override val id: String,
     override var nextElements: List<BPMNElement>,
-    val requests: List<ProductFamilyRequest>
+    var requests: List<ProductFamilyRequest>
 ) : BPMNElement {
     override val activationTokens: MutableList<ActivationToken> = mutableListOf()
 
@@ -22,6 +22,8 @@ class StartEventExecutor(private val startEvent: StartEvent) : Executor(startEve
         startEvent.nextElements.forEach { element ->
             element.activationTokens.addAll(activationTokens)
         }
+
+        wakeUpNextElementsOf(startEvent)
 
         passivate()
     }

@@ -1,25 +1,34 @@
-import org.kalasim.Component
-import org.kalasim.createSimulation
-import org.kalasim.dependency
-import org.kalasim.enableComponentLogger
+import org.kalasim.*
+import java.io.File
 
 fun main() {
     createSimulation {
-        enableComponentLogger()
+        //enableComponentLogger()
 
-        val compatibilityMap = CompatibilityMap()
-        val inventories = Inventories()
+        val file = File("bpmnExamples/paper.bpmn")
+        val process = BPMNProcess(file)
 
-        dependency { compatibilityMap }
-        dependency { inventories }
+        dependency { process.inventories }
+        dependency { process.compatibilityMap }
+        dependency { process.accessories }
+
+        process.executors
 
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
-                // log("P1: ${inventories.get(p1).level}")
-                // log("P2: ${inventories.get(p2).level}")
+
+                process.finalProducts.forEach {
+                    println("${it.value.name}: ${process.inventories.get(it.value).level}")
+                }
+//                println("###")
+//                process.bpmnElements.forEach {
+//                    println("${it.value.id} => ${it.value.activationTokens.count()}")
+//                }
+                println("***")
 
                 standby()
             }
         }
+
     }.run()
 }

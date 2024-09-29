@@ -13,54 +13,82 @@ class Activity(
 
 }
 
-class ActivityExecutor(executorId: String) : Executor(executorId) {
+class ExecutorAccessory(val accessory: Accessory, val requiredQuantity: Double)
+
+class ActivityExecutor(executorId: String, val neededAccessories: List<ExecutorAccessory>) : Executor(executorId) {
     private val inventories: Inventories by inject()
+    private val accessories: Accessories by inject()
 
     override fun process(): Sequence<Component> = sequence {
         val compatibilities = compatibilityMap.get(null, null, this@ActivityExecutor)
             .groupBy { it.element as Activity }
-        require(compatibilities.isNotEmpty()) { "ActivityExecutor $id must have at least one compatibility associated" }
+        require(compatibilities.isNotEmpty()) { ".ActivityExecutor $id must have at least one compatibility associated" }
 
         while (true) {
             var worked = false
 
-            for ((activity, compatibilitiesInActivity) in compatibilities) {
-                for (compatibility in compatibilitiesInActivity) {
-                    activity.activationTokens.firstOrNull { it.productFamily == compatibility.productFamily }
-                        ?.let { token ->
+            val allAccessoriesReady =
+                neededAccessories.all { accessories.get(it.accessory).available >= it.requiredQuantity }
 
-                            val inputResourceRequest =
-                                activity.transformations.get(compatibility.productFamily).inputs.map {
-                                    Pair(inventories.get(it.productFamily), it.quantity * compatibility.batchSize)
-                                }
-                            val isEnoughInputResources =
-                                inputResourceRequest.count { it.first.level >= it.second } == inputResourceRequest.count()
+            if (allAccessoriesReady) {
+                if (neededAccessories.isNotEmpty()) {
+                    request(*neededAccessories.map { accessories.get(it.accessory) }.toTypedArray())
+                }
 
-                            if (isEnoughInputResources) {
-                                worked = true
+                for ((activity, compatibilitiesInActivity) in compatibilities) {
+                    for (compatibility in compatibilitiesInActivity) {
+                        activity.activationTokens.firstOrNull { it.productFamily == compatibility.productFamily }
+                            ?.let { token ->
+                                activity.transformations.get(token.productFamily)?.firstOrNull { it.isDoable(inventories) }
+                                    ?.let { pickedTransformation ->
+                                        val inputResourceRequest = pickedTransformation.inputs.map {
+                                            Pair(
+                                                inventories.get(it.productFamily),
+                                                it.quantity * compatibility.batchSize
+                                            )
+                                        }
+                                        val isEnoughInputResources =
+                                            inputResourceRequest.count { it.first.level >= it.second } == inputResourceRequest.count()
 
-                                // Remove activation token
-                                activity.activationTokens.remove(token)
+                                        if (isEnoughInputResources) {
+                                            worked = true
 
-                                // Take input resources necessary to perform the work
-                                inputResourceRequest.forEach { (resource, quantity) -> take(resource, quantity) }
+                                            // Remove activation token
+                                            activity.activationTokens.remove(token)
 
-                                // Wait time
-                                hold(compatibility.duration)
+                                            // Take input resources necessary to perform the work
+                                            inputResourceRequest.forEach { (resource, quantity) ->
+                                                take(
+                                                    resource,
+                                                    quantity
+                                                )
+                                            }
 
-                                // Create new products
-                                activity.transformations.get(compatibility.productFamily).outputs
-                                    .forEach { put(inventories.get(it.productFamily), it.quantity) }
+                                            // Wait time
+                                            hold(compatibility.duration)
 
-                                // Add activation token to next elements
-                                activity.nextElements.forEach { it.activationTokens.add(token) }
+                                            // Create new products if needed
+                                            pickedTransformation.outputs
+                                                .forEach { put(inventories.get(it.productFamily), it.quantity) }
+
+                                            // Add activation token to next elements
+                                            activity.nextElements.forEach { it.activationTokens.add(token) }
+
+                                            // Waking up next executors
+                                            wakeUpNextElementsOf(activity)
+                                        }
+                                    }
                             }
-                        }
+                    }
+                }
+
+                if (neededAccessories.isNotEmpty()) {
+                    release(*neededAccessories.map { accessories.get(it.accessory) }.toTypedArray())
                 }
             }
 
             if (!worked) {
-                standby()
+                passivate()
             }
         }
     }

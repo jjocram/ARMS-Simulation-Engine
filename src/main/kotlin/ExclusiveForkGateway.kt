@@ -26,7 +26,9 @@ class ExclusiveForkGatewayExecutor(private val exclusiveForkGateway: ExclusiveFo
 
             exclusiveForkGateway.activationTokens.clear()
 
-            standby()
+            wakeUpNextElementsOf(exclusiveForkGateway)
+
+            passivate()
         }
     }
 }

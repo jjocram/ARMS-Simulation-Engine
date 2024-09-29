@@ -16,7 +16,9 @@ class ExclusiveJoinGatewayExecutor(val exclusiveJoinGateway: ExclusiveJoinGatewa
 
             exclusiveJoinGateway.activationTokens.clear()
 
-            standby()
+            wakeUpNextElementsOf(exclusiveJoinGateway)
+
+            passivate()
         }
     }
 }

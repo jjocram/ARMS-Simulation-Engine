@@ -8,16 +8,22 @@ class ParallelJoinGateway(override val id: String, override var nextElements: Li
 
 class ParallelJoinGatewayExecutor(private val parallelJoinGateway: ParallelJoinGateway): Executor(parallelJoinGateway.id) {
     override fun process(): Sequence<Component> = sequence {
-        val tokensWithEnoughPresence = parallelJoinGateway.activationTokens
-            .groupingBy { it }
-            .eachCount()
-            .filter { it.value == parallelJoinGateway.incomingConnections }
-            .map { it.key }
+        while (true) {
+            val tokensWithEnoughPresence = parallelJoinGateway.activationTokens
+                .groupingBy { it }
+                .eachCount()
+                .filter { it.value == parallelJoinGateway.incomingConnections }
+                .map { it.key }
 
-        parallelJoinGateway.nextElements.forEach { it.activationTokens.addAll(tokensWithEnoughPresence) }
+            if (tokensWithEnoughPresence.isNotEmpty()) {
+                parallelJoinGateway.nextElements.forEach { it.activationTokens.addAll(tokensWithEnoughPresence) }
 
-        parallelJoinGateway.activationTokens.removeAll(tokensWithEnoughPresence)
+                parallelJoinGateway.activationTokens.removeAll(tokensWithEnoughPresence)
 
-        standby()
+                wakeUpNextElementsOf(parallelJoinGateway)
+            }
+
+            passivate()
+        }
     }
 }

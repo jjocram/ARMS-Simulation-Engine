@@ -8,11 +8,14 @@ class ParallelForkGateway(override val id: String, override var nextElements: Li
 
 class ParallelForkGatewayExecutor(private val parallelForkGateway: ParallelForkGateway): Executor(parallelForkGateway.id) {
     override fun process(): Sequence<Component> = sequence {
-        log("Before")
-        parallelForkGateway.nextElements.forEach { it.activationTokens.addAll(parallelForkGateway.activationTokens) }
+        while (true) {
+            parallelForkGateway.nextElements.forEach { it.activationTokens.addAll(parallelForkGateway.activationTokens) }
 
-        parallelForkGateway.activationTokens.clear()
+            parallelForkGateway.activationTokens.clear()
 
-        standby()
+            wakeUpNextElementsOf(parallelForkGateway)
+
+            passivate()
+        }
     }
 }

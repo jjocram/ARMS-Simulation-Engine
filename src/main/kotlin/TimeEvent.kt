@@ -9,10 +9,14 @@ class TimeEvent(override val id: String, override var nextElements: List<BPMNEle
 
 class TimeEventExecutor(private val timeEvent: TimeEvent): Executor(timeEvent.id) {
     override fun process(): Sequence<Component> = sequence {
-        hold(timeEvent.holdDuration)
+        while(true) {
+            hold(timeEvent.holdDuration)
 
-        timeEvent.nextElements.forEach { it.activationTokens.addAll(timeEvent.activationTokens) }
+            timeEvent.nextElements.forEach { it.activationTokens.addAll(timeEvent.activationTokens) }
 
-        timeEvent.activationTokens.clear()
+            timeEvent.activationTokens.clear()
+
+            wakeUpNextElementsOf(timeEvent)
+         }
     }
 }
