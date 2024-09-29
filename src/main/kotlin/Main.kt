@@ -1,12 +1,17 @@
 import org.kalasim.*
 import java.io.File
+import kotlin.system.exitProcess
 
-fun main() {
+fun main(args: Array<String>) {
+    val processFile = File(args[0])
+    if (!processFile.exists()) {
+        error("File: ${args[0]}} not found")
+        exitProcess(1)
+    }
+
     createSimulation {
         //enableComponentLogger()
-
-        val file = File("bpmnExamples/paper.bpmn")
-        val process = BPMNProcess(file)
+        val process = BPMNProcess(processFile)
 
         dependency { process.inventories }
         dependency { process.compatibilityMap }
