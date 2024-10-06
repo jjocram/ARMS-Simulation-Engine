@@ -6,8 +6,12 @@ class BPMNProcess(file: File) {
     private val xmlProcess = XMLProcess(file)
 
     val finalProducts = xmlProcess.finalProducts.mapValues { ProductFamily(it.value.id, it.value.name) }
+    val totalTokens = finalProducts
+        .map { xmlProcess.finalProducts.getValue(it.value.id).finalQuantity!!.toInt() }
+        .sum()
 
-    val accessories = xmlProcess.accessories.mapValues { Accessory(it.value.id, it.value.name, it.value.quantity.toDouble()) }
+    val accessories =
+        xmlProcess.accessories.mapValues { Accessory(it.value.id, it.value.name, it.value.quantity.toDouble()) }
 
     val bpmnElements = getBPMNElements()
     private fun getBPMNElements(): Map<String, BPMNElement> {
@@ -34,15 +38,33 @@ class BPMNProcess(file: File) {
             .forEach { (id, exclusiveForkGateway) ->
                 val conditions = xmlProcess.xmlElements.getValue(id).outgoings
                     .map { xmlProcess.sequenceFlows.getValue(it) }
-                    .mapNotNull { if (bpmnElements.containsKey(it.targetRef)) Pair(bpmnElements[it.targetRef], it) else null }
-                    .map { Condition(it.first!!, it.second.name?.lowercase() == "default", { it.second.name?.lowercase() != "default" && (Random.nextDouble() <= (it.second.name?.toDouble() ?: 1.0)) }) } // TODO improve notation: 0.0 < sequenceFlow < 1.0
+                    .mapNotNull {
+                        if (bpmnElements.containsKey(it.targetRef)) Pair(
+                            bpmnElements[it.targetRef],
+                            it
+                        ) else null
+                    }
+                    .map {
+                        Condition(
+                            it.first!!,
+                            it.second.name?.lowercase() == "default",
+                            {
+                                it.second.name?.lowercase() != "default" && (Random.nextDouble() <= (it.second.name?.toDouble()
+                                    ?: 1.0))
+                            })
+                    } // TODO improve notation: 0.0 < sequenceFlow < 1.0
                 (exclusiveForkGateway as ExclusiveForkGateway).conditions = conditions
             }
 
         // 2.3 Product request for startEvent
         bpmnElements.filter { it.value is StartEvent }.values.firstOrNull()?.let { startEvent ->
             (startEvent as StartEvent).requests =
-                finalProducts.map { ProductFamilyRequest(it.value, xmlProcess.finalProducts.getValue(it.value.id).finalQuantity!!.toInt()) }
+                finalProducts.map {
+                    ProductFamilyRequest(
+                        it.value,
+                        xmlProcess.finalProducts.getValue(it.value.id).finalQuantity!!.toInt()
+                    )
+                }
         }
 
         return bpmnElements
@@ -99,7 +121,7 @@ class BPMNProcess(file: File) {
             .associateBy { it.id }
 
         val activityExecutors = xmlProcess.executors
-            .map { ActivityExecutor(it.value.id, it.value.requiredAccessories.map { ExecutorAccessory(accessories.getValue(it.id), it.requiredQuantity.toDouble()) }) }
+            .map { ActivityExecutor(it.value.id) }
             .associateBy { it.id }
 
         return uniqueExecutors + activityExecutors
@@ -108,19 +130,17 @@ class BPMNProcess(file: File) {
     val compatibilityMap = CompatibilityMap()
 
     init {
-        // Add a compatibility item for each factory:product defined in factory:executor
-        xmlProcess.executors
-            .forEach { (executorId, xmlExecutor) ->
-                xmlExecutor.compatibilities.forEach { xmlCompatibility ->
-                    compatibilityMap.add(
-                        bpmnElements.getValue(xmlCompatibility.idActivity),
-                        productFamilies.getValue(xmlCompatibility.id),
-                        executors.getValue(executorId),
-                        xmlCompatibility.duration,
-                        xmlCompatibility.batch
-                    )
-                }
-            }
+        // Add compatibilities to the CompatibilityMap
+        xmlProcess.compatibilities.forEach { (_, compatibility) ->
+            compatibilityMap.add(
+                bpmnElements.getValue(compatibility.idActivity),
+                productFamilies.getValue(compatibility.idProduct),
+                executors.getValue(compatibility.idExecutor),
+                compatibility.duration,
+                compatibility.batch
+            )
+
+        }
 
         // Add a compatibility item for each final product for the unique executors associated to BPMNElements
         bpmnElements

@@ -26,11 +26,62 @@ fun getElementsFrom(nodeList: NodeList): List<Element> {
 class XMLProduct(val id: String, val name: String, val finalQuantity: String?) {
     companion object {
         fun fromElement(element: Element): XMLProduct {
-            val finalQuantity = if (element.getAttribute("quantity").isBlank()) null else element.getAttribute("quantity")
+            val finalQuantity =
+                if (element.getAttribute("quantity").isBlank()) null else element.getAttribute("quantity")
             return XMLProduct(element.getAttribute("id"), element.getAttribute("name"), finalQuantity)
         }
     }
 
+}
+
+class XMLCompatibility(
+    val id: String,
+    val time: String,
+    val timeUnit: String,
+    val idActivity: String,
+    val idExecutor: String,
+    val idProduct: String,
+    val batch: Int,
+    val accessories: List<XMLAccessoryCompatibility>
+) {
+    class XMLAccessoryCompatibility(val id: String, val quantity: Double) {
+        companion object {
+            fun fromElement(element: Element): XMLAccessoryCompatibility {
+                return XMLAccessoryCompatibility(
+                    element.getAttribute("id"),
+                    element.getAttribute("quantity").toDouble()
+                )
+            }
+        }
+    }
+
+    companion object {
+        fun fromElement(element: Element): XMLCompatibility {
+            return XMLCompatibility(
+                element.getAttribute("id"),
+                element.getAttribute("time"),
+                element.getAttribute("timeUnit"),
+                element.getAttribute("idActivity"),
+                element.getAttribute("idExecutor"),
+                element.getAttribute("idProduct"),
+                element.getAttribute("batch").toInt(),
+                getElementsFrom(element.childNodes)
+                    .filter { it.nodeName == XMLProcess.ACCESSORY_COMPATIBILITY_LABEL }
+                    .map { XMLAccessoryCompatibility.fromElement(it) }
+            )
+        }
+    }
+
+    val duration: Duration
+        get() {
+            return when (timeUnit) {
+                "s" -> time.toDouble().seconds
+                "m" -> time.toDouble().minutes
+                "h" -> time.toDouble().hours
+                "d" -> time.toDouble().days
+                else -> throw IllegalArgumentException("Unknown time unit $timeUnit")
+            }
+        }
 }
 
 class XMLTransformation(
@@ -94,66 +145,12 @@ class XMLAccessory(val id: String, val name: String, val quantity: String) {
     }
 }
 
-class XMLExecutor(
-    val id: String,
-    val name: String,
-    val compatibilities: List<XMLCompatibility>,
-    val requiredAccessories: List<XMLAccessoryRequired>
-) {
-    class XMLCompatibility(
-        val id: String,
-        val time: String,
-        val timeUnit: String,
-        val batch: Int,
-        val idActivity: String
-    ) {
-        val duration: Duration
-            get() {
-                return when (timeUnit) {
-                    "s" -> time.toDouble().seconds
-                    "m" -> time.toDouble().minutes
-                    "h" -> time.toDouble().hours
-                    "d" -> time.toDouble().days
-                    else -> throw IllegalArgumentException("Unknown time unit $timeUnit")
-                }
-            }
-
-        companion object {
-            fun fromElement(element: Element): XMLCompatibility {
-                return XMLCompatibility(
-                    element.getAttribute("id"),
-                    element.getAttribute("time"),
-                    element.getAttribute("timeUnit"),
-                    element.getAttribute("batch").toInt(),
-                    element.getAttribute("idActivity")
-                )
-            }
-        }
-    }
-
-    class XMLAccessoryRequired(val id: String, val name: String, val requiredQuantity: String) {
-        companion object {
-            fun fromElement(element: Element): XMLAccessoryRequired {
-                return XMLAccessoryRequired(
-                    element.getAttribute("id"),
-                    element.getAttribute("name"),
-                    element.getAttribute("quantity")
-                )
-            }
-        }
-    }
-
+class XMLExecutor(val id: String, val name: String) {
     companion object {
         fun fromElement(element: Element): XMLExecutor {
             return XMLExecutor(
                 element.getAttribute("id"),
                 element.getAttribute("name"),
-                getElementsFrom(element.childNodes)
-                    .filter { it.nodeName == XMLProcess.PRODUCT_LABEL }
-                    .map { XMLCompatibility.fromElement(it) },
-                getElementsFrom(element.childNodes)
-                    .filter { it.nodeName == XMLProcess.ACCESSORY_LABEL }
-                    .map { XMLAccessoryRequired.fromElement(it) }
             )
         }
     }
@@ -240,11 +237,12 @@ class XMLTimeEvent(
         }
     }
 
-    fun getDuration(): Duration {
-        return 7.day
-    }
+    val duration: Duration
+        get() {
+            return 7.day
+        }
 
-    override fun toBPMNElement(): TimeEvent = TimeEvent(id, emptyList(), getDuration())
+    override fun toBPMNElement(): TimeEvent = TimeEvent(id, emptyList(), duration)
 }
 
 
@@ -337,7 +335,9 @@ class XMLProcess(xmlFile: File) {
         const val INTERMEDIATE_CATCH_EVENT_LABEL = "bpmn:intermediateCatchEvent"
         const val EXCLUSIVE_GATEWAY_LABEL = "bpmn:exclusiveGateway"
         const val PARALLEL_GATEWAY_LABEL = "bpmn:parallelGateway"
-        const val ACCESSORY_LABEL = "factoru:accessory"
+        const val ACCESSORY_LABEL = "factory:accessory"
+        const val ACCESSORY_COMPATIBILITY_LABEL = "factory:accessoryCompatibility"
+        const val COMPATIBILITY_LABEL = "factory:compatibility"
     }
 
     private val document: Document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlFile)
@@ -365,6 +365,15 @@ class XMLProcess(xmlFile: File) {
         return getElementsFrom(extensionElements)
             .filter { it.nodeName == ACCESSORY_LABEL }
             .map { XMLAccessory.fromElement(it) }
+            .associateBy { it.id }
+    }
+
+    val compatibilities = getXMLCompatibilities()
+    private fun getXMLCompatibilities(): Map<String, XMLCompatibility> {
+        val extensionElement = process.getElementsByTagName(EXTENSION_ELEMENTS_LABEL).item(0).childNodes
+        return getElementsFrom(extensionElement)
+            .filter { it.nodeName == COMPATIBILITY_LABEL }
+            .map { XMLCompatibility.fromElement(it) }
             .associateBy { it.id }
     }
 
@@ -431,7 +440,8 @@ class XMLProcess(xmlFile: File) {
             .associateBy { it.id }
     }
 
-    private val startEvent = XMLStartEvent.fromElement(process.getElementsByTagName(START_EVENT_LABEL).item(0) as Element)
+    private val startEvent =
+        XMLStartEvent.fromElement(process.getElementsByTagName(START_EVENT_LABEL).item(0) as Element)
 
     private val endEvents = getXMLEndEvents()
     private fun getXMLEndEvents(): Map<String, XMLEndEvent> {

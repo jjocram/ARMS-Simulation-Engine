@@ -15,25 +15,21 @@ class Activity(
 
 class ExecutorAccessory(val accessory: Accessory, val requiredQuantity: Double)
 
-class ActivityExecutor(executorId: String, val neededAccessories: List<ExecutorAccessory>) : Executor(executorId) {
+class ActivityExecutor(executorId: String) : Executor(executorId) {
     private val inventories: Inventories by inject()
     private val accessories: Accessories by inject()
 
     override fun process(): Sequence<Component> = sequence {
         val compatibilities = compatibilityMap.get(null, null, this@ActivityExecutor)
             .groupBy { it.element as Activity }
-        require(compatibilities.isNotEmpty()) { ".ActivityExecutor $id must have at least one compatibility associated" }
+        require(compatibilities.isNotEmpty()) { "ActivityExecutor $id must have at least one compatibility associated" }
 
         while (true) {
             var worked = false
 
-            val allAccessoriesReady =
-                neededAccessories.all { accessories.get(it.accessory).available >= it.requiredQuantity }
+            val allAccessoriesReady = true // TODO: fixme move when compatibility is available
 
             if (allAccessoriesReady) {
-                if (neededAccessories.isNotEmpty()) {
-                    request(*neededAccessories.map { accessories.get(it.accessory) }.toTypedArray())
-                }
 
                 for ((activity, compatibilitiesInActivity) in compatibilities) {
                     for (compatibility in compatibilitiesInActivity) {
@@ -80,10 +76,6 @@ class ActivityExecutor(executorId: String, val neededAccessories: List<ExecutorA
                                     }
                             }
                     }
-                }
-
-                if (neededAccessories.isNotEmpty()) {
-                    release(*neededAccessories.map { accessories.get(it.accessory) }.toTypedArray())
                 }
             }
 
