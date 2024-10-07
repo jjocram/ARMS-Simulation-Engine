@@ -137,7 +137,8 @@ class BPMNProcess(file: File) {
                 productFamilies.getValue(compatibility.idProduct),
                 executors.getValue(compatibility.idExecutor),
                 compatibility.duration,
-                compatibility.batch
+                compatibility.batch,
+                compatibility.accessories.map { CompatibilityMap.CompatibilityItem.AccessoryCompatibility(accessories.getValue(it.id), it.quantity) }
             )
 
         }
@@ -149,7 +150,7 @@ class BPMNProcess(file: File) {
             .forEach { (id, element) ->
                 val elementExecutor = executors.getValue(id)
                 finalProducts.forEach { (_, finalProduct) ->
-                    compatibilityMap.add(element, finalProduct, elementExecutor, 0.minutes)
+                    compatibilityMap.add(element, finalProduct, elementExecutor, 0.minutes, 1, emptyList())
                 }
             }
     }

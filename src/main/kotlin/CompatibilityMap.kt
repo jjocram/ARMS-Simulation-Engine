@@ -1,3 +1,4 @@
+import CompatibilityMap.CompatibilityItem.AccessoryCompatibility
 import kotlin.time.Duration
 
 class CompatibilityMap {
@@ -6,8 +7,11 @@ class CompatibilityMap {
         val productFamily: ProductFamily,
         val executor: Executor,
         val duration: Duration,
-        val batchSize: Int = 1,
-    )
+        val batchSize: Int,
+        val accessories: List<AccessoryCompatibility>,
+    ) {
+        class AccessoryCompatibility(val accessory: Accessory, val quantity: Int)
+    }
 
     private val compatibilities: MutableList<CompatibilityItem> = mutableListOf()
 
@@ -16,8 +20,9 @@ class CompatibilityMap {
         productFamily: ProductFamily,
         executor: Executor,
         duration: Duration,
-        batchSize: Int = 1,
-    ) = compatibilities.add(CompatibilityItem(element, productFamily, executor, duration, batchSize))
+        batchSize: Int,
+        accessories: List<AccessoryCompatibility>,
+    ) = compatibilities.add(CompatibilityItem(element, productFamily, executor, duration, batchSize, accessories))
 
     fun get(element: BPMNElement?, productFamily: ProductFamily?, executor: Executor?): List<CompatibilityItem> =
         get(element?.id, productFamily?.id, executor?.id)

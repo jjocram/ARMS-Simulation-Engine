@@ -1,4 +1,5 @@
 import org.kalasim.Component
+import org.kalasim.ResourceRequest
 import org.koin.core.component.inject
 
 class Activity(
@@ -27,55 +28,73 @@ class ActivityExecutor(executorId: String) : Executor(executorId) {
         while (true) {
             var worked = false
 
-            val allAccessoriesReady = true // TODO: fixme move when compatibility is available
+            for ((activity, compatibilitiesInActivity) in compatibilities) {
+                for (compatibility in compatibilitiesInActivity) {
+                    activity.activationTokens.firstOrNull { it.productFamily == compatibility.productFamily }
+                        ?.let { token ->
+                            activity.transformations.get(token.productFamily)?.firstOrNull { it.isDoable(inventories) }
+                                ?.let { pickedTransformation ->
+                                    val inputResourceRequest = pickedTransformation.inputs.map {
+                                        Pair(
+                                            inventories.get(it.productFamily),
+                                            it.quantity * compatibility.batchSize
+                                        )
+                                    }
+                                    val isEnoughInputResources =
+                                        inputResourceRequest.count { it.first.level >= it.second } == inputResourceRequest.count()
 
-            if (allAccessoriesReady) {
+                                    val allAccessoryAvailable =
+                                        compatibility.accessories.all { accessories.get(it.accessory).available > it.quantity }
 
-                for ((activity, compatibilitiesInActivity) in compatibilities) {
-                    for (compatibility in compatibilitiesInActivity) {
-                        activity.activationTokens.firstOrNull { it.productFamily == compatibility.productFamily }
-                            ?.let { token ->
-                                activity.transformations.get(token.productFamily)?.firstOrNull { it.isDoable(inventories) }
-                                    ?.let { pickedTransformation ->
-                                        val inputResourceRequest = pickedTransformation.inputs.map {
-                                            Pair(
-                                                inventories.get(it.productFamily),
-                                                it.quantity * compatibility.batchSize
+                                    if (isEnoughInputResources && allAccessoryAvailable) {
+                                        worked = true
+
+                                        // Remove activation token
+                                        activity.activationTokens.remove(token)
+
+                                        // Take input resources necessary to perform the work
+                                        inputResourceRequest.forEach { (resource, quantity) ->
+                                            take(
+                                                resource,
+                                                quantity
                                             )
                                         }
-                                        val isEnoughInputResources =
-                                            inputResourceRequest.count { it.first.level >= it.second } == inputResourceRequest.count()
 
-                                        if (isEnoughInputResources) {
-                                            worked = true
-
-                                            // Remove activation token
-                                            activity.activationTokens.remove(token)
-
-                                            // Take input resources necessary to perform the work
-                                            inputResourceRequest.forEach { (resource, quantity) ->
-                                                take(
-                                                    resource,
-                                                    quantity
+                                        // Take accessories specified in compatibility
+                                        if (compatibility.accessories.isNotEmpty()) {
+                                            request(*compatibility.accessories.map {
+                                                ResourceRequest(
+                                                    accessories.get(it.accessory),
+                                                    it.quantity.toDouble()
                                                 )
-                                            }
-
-                                            // Wait time
-                                            hold(compatibility.duration)
-
-                                            // Create new products if needed
-                                            pickedTransformation.outputs
-                                                .forEach { put(inventories.get(it.productFamily), it.quantity) }
-
-                                            // Add activation token to next elements
-                                            activity.nextElements.forEach { it.activationTokens.add(token) }
-
-                                            // Waking up next executors
-                                            wakeUpNextElementsOf(activity)
+                                            }.toTypedArray())
                                         }
+
+                                        // Wait time
+                                        hold(compatibility.duration)
+
+                                        // Release accessory taken
+                                        if (compatibility.accessories.isNotEmpty()) {
+                                            release(*compatibility.accessories.map {
+                                                ResourceRequest(
+                                                    accessories.get(it.accessory),
+                                                    it.quantity.toDouble()
+                                                )
+                                            }.toTypedArray())
+                                        }
+
+                                        // Create new products if needed
+                                        pickedTransformation.outputs
+                                            .forEach { put(inventories.get(it.productFamily), it.quantity) }
+
+                                        // Add activation token to next elements
+                                        activity.nextElements.forEach { it.activationTokens.add(token) }
+
+                                        // Waking up next executors
+                                        wakeUpNextElementsOf(activity)
                                     }
-                            }
-                    }
+                                }
+                        }
                 }
             }
 

@@ -44,12 +44,12 @@ class XMLCompatibility(
     val batch: Int,
     val accessories: List<XMLAccessoryCompatibility>
 ) {
-    class XMLAccessoryCompatibility(val id: String, val quantity: Double) {
+    class XMLAccessoryCompatibility(val id: String, val quantity: Int) {
         companion object {
             fun fromElement(element: Element): XMLAccessoryCompatibility {
                 return XMLAccessoryCompatibility(
                     element.getAttribute("id"),
-                    element.getAttribute("quantity").toDouble()
+                    element.getAttribute("quantity").toInt()
                 )
             }
         }
