@@ -1,1 +1,0 @@
-data class ProductFamily(val id: String, val name: String)

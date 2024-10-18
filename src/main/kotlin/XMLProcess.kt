@@ -160,8 +160,6 @@ sealed interface XMLElement {
     val id: String
     val outgoings: List<String>
     val incomings: List<String>
-
-    fun toBPMNElement(): BPMNElement
 }
 
 fun getListOf(type: String, fromElement: Element): List<String> {
@@ -181,8 +179,6 @@ class XMLStartEvent(override val id: String, override val outgoings: List<String
             )
         }
     }
-
-    override fun toBPMNElement(): StartEvent = StartEvent(id, emptyList(), emptyList())
 }
 
 class XMLEndEvent(override val id: String, override val incomings: List<String>) : XMLElement {
@@ -196,8 +192,6 @@ class XMLEndEvent(override val id: String, override val incomings: List<String>)
             )
         }
     }
-
-    override fun toBPMNElement(): EndEvent = EndEvent(id)
 }
 
 class XMLTask(
@@ -216,8 +210,6 @@ class XMLTask(
             )
         }
     }
-
-    override fun toBPMNElement(): Activity = Activity(id, emptyList(), TransformationMap())
 }
 
 class XMLTimeEvent(
@@ -241,8 +233,6 @@ class XMLTimeEvent(
         get() {
             return 7.day
         }
-
-    override fun toBPMNElement(): TimeEvent = TimeEvent(id, emptyList(), duration)
 }
 
 
@@ -277,11 +267,6 @@ class XMLExclusiveGateway(
                 return GatewayType.FORK
             }
         }
-
-    override fun toBPMNElement(): BPMNElement = when (type) {
-        GatewayType.FORK -> ExclusiveForkGateway(id, emptyList(), emptyList())
-        GatewayType.JOIN -> ExclusiveJoinGateway(id, emptyList())
-    }
 }
 
 class XMLParallelGateway(
@@ -309,11 +294,6 @@ class XMLParallelGateway(
                 return GatewayType.FORK
             }
         }
-
-    override fun toBPMNElement(): BPMNElement = when (type) {
-        GatewayType.FORK -> ParallelForkGateway(id, emptyList())
-        GatewayType.JOIN -> ParallelJoinGateway(id, emptyList(), incomings.count())
-    }
 }
 
 class XMLProcess(xmlFile: File) {
