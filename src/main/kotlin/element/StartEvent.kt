@@ -10,18 +10,16 @@ import java.util.UUID
 class StartEvent(
     id: String,
     value: String?,
-    inputControl: Place,
     outputControl: Place,
-    inputProduct: Place,
     outputProduct: Place,
     val totalProducts: Int
 ) :
     BPMNElement(id, value) {
-    val transition = Transition(value ?: id) { return@Transition true }
+    val transition = Transition(value ?: id) { return@Transition null }
 
     init {
-        transition.setControlPlaces(inputControl, outputControl) // Position 0 is for control
-        transition.setProductPlaces(inputProduct, outputProduct) // Position 1 is for product
+        transition.addPlace("control", outputControl)
+        transition.addPlace("product", outputProduct)
     }
 
     override fun process(): Sequence<Component> = sequence {
@@ -37,7 +35,7 @@ class StartEvent(
             return@map token
         }
 
-        transition.connections[0].output.tokens.addAll(controlTokens) // Position 0 is for control
-        transition.connections[1].output.tokens.addAll(productTokens) // Position 1 is for product
+        controlTokens.forEach { transition.getPlace("control").add(it) }
+        productTokens.forEach { transition.getPlace("product").add(it) }
     }
 }

@@ -8,27 +8,32 @@ import kotlin.time.Duration.Companion.seconds
 
 class Activity(id: String, value: String, inputControl: Place, outputControl: Place, inputProduct: Place, outputProduct: Place) : BPMNElement(id, value) {
     private val transition = Transition(value) {
-        for (controlInputToken in it.connections[0].input.tokens) {
-            for (productInputToken in it.connections[1].input.tokens) {
-                if (controlInputToken.ids == productInputToken.ids) {
-                    return@Transition true
-                }
-            }
-        }
-
-        return@Transition false
+        val controlInputIds = it.getPlace("inputControl").tokens.map { it.ids }.toSet()
+        val productInputIds = it.getPlace("inputProduct").tokens.map { it.ids }.toSet()
+        return@Transition controlInputIds.intersect(productInputIds).firstOrNull()
     }
 
     init {
-        transition.setControlPlaces(inputControl, outputControl)
-        transition.setProductPlaces(inputProduct, outputProduct)
+        transition.addPlace("inputControl", inputControl)
+        transition.addPlace("outputControl", outputControl)
+        transition.addPlace("inputProduct", inputProduct)
+        transition.addPlace("outputProduct", outputProduct)
     }
 
     override fun repeatedProcess(): Sequence<Component> = sequence {
-        if (transition.canFire) {
-            val retainedTokens = transition.takeInputTransientTokens()
+        val tokenId = transition.fireableTokenId
+        if (tokenId != null) { // There is at least one token with the same id in both controlInputPlace and productInputPlace
+            // Take tokens from inputs
+            val controlToken = transition.getPlace("inputControl").take(tokenId)
+            val productToken = transition.getPlace("inputProduct").take(tokenId)
+
+            // Hold time
             hold(10.seconds)
-            transition.moveTransientTokens(retainedTokens)
+            log("Done $value")
+
+            // Add token to outputs
+            transition.getPlace("outputControl").add(controlToken)
+            transition.getPlace("outputProduct").add(productToken)
         } else {
             standby()
         }

@@ -12,17 +12,29 @@ class EndEvent(
     inputProduct: Place,
     outputProduct: Place
 ) : BPMNElement(id, value) {
-    private val transition =
-        Transition(value ?: id) { return@Transition it.connections.map { it.input }.all { it.isNotEmpty } }
+    private val transition = Transition(value ?: id) {
+        val controlInputIds = it.getPlace("inputControl").tokens.map { it.ids }.toSet()
+        val productInputIds = it.getPlace("inputProduct").tokens.map { it.ids }.toSet()
+        return@Transition controlInputIds.intersect(productInputIds).firstOrNull()
+    }
 
     init {
-        transition.addConnection(inputControl, outputControl)
-        transition.addConnection(inputProduct, outputProduct)
+        transition.addPlace("inputControl", inputControl)
+        transition.addPlace("outputControl", outputControl)
+        transition.addPlace("inputProduct", inputProduct)
+        transition.addPlace("outputProduct", outputProduct)
     }
 
     override fun repeatedProcess(): Sequence<Component> = sequence {
-        if (transition.canFire) {
-            transition.fireImmediately()
+        val tokenId = transition.fireableTokenId
+        if (tokenId != null) { // There is at least one token with the same id in both controlInputPlace and productInputPlace
+            // Move from control input to control output
+            val controlToken = transition.getPlace("inputControl").take(tokenId)
+            transition.getPlace("outputControl").add(controlToken)
+
+            // Move from product input to product output
+            val productToken = transition.getPlace("inputProduct").take(tokenId)
+            transition.getPlace("outputProduct").add(productToken)
         } else {
             standby()
         }
