@@ -1,9 +1,13 @@
+import element.ExclusiveSplitCondition
+import element.ProductRequest
 import org.kalasim.day
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.NodeList
+import place.Place
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -23,15 +27,18 @@ fun getElementsFrom(nodeList: NodeList): List<Element> {
     return elementList
 }
 
-class XMLProduct(val id: String, val name: String, val finalQuantity: String?) {
+class XMLProductProperty(
+    val key: String,
+    val value: String
+) {
     companion object {
-        fun fromElement(element: Element): XMLProduct {
-            val finalQuantity =
-                if (element.getAttribute("quantity").isBlank()) null else element.getAttribute("quantity")
-            return XMLProduct(element.getAttribute("id"), element.getAttribute("name"), finalQuantity)
+        fun fromElement(element: Element): XMLProductProperty {
+            return XMLProductProperty(
+                element.getAttribute("key"),
+                element.getAttribute("value")
+            )
         }
     }
-
 }
 
 class XMLCompatibility(
@@ -40,8 +47,7 @@ class XMLCompatibility(
     val timeUnit: String,
     val idActivity: String,
     val idExecutor: String,
-    val idProduct: String,
-    val batch: Int,
+    val productProperties: List<XMLProductProperty>,
     val accessories: List<XMLAccessoryCompatibility>
 ) {
     class XMLAccessoryCompatibility(val id: String, val quantity: Int) {
@@ -63,8 +69,9 @@ class XMLCompatibility(
                 element.getAttribute("timeUnit"),
                 element.getAttribute("idActivity"),
                 element.getAttribute("idExecutor"),
-                element.getAttribute("idProduct"),
-                element.getAttribute("batch").toInt(),
+                getElementsFrom(element.childNodes)
+                    .filter { it.nodeName == XMLProcess.PRODUCT_PROPERTY_LABEL }
+                    .map { XMLProductProperty.fromElement(it) },
                 getElementsFrom(element.childNodes)
                     .filter { it.nodeName == XMLProcess.ACCESSORY_COMPATIBILITY_LABEL }
                     .map { XMLAccessoryCompatibility.fromElement(it) }
@@ -86,18 +93,19 @@ class XMLCompatibility(
 
 class XMLTransformation(
     val id: String,
-    val activityId: String,
-    val productId: String,
+    val idActivity: String,
+    val productProperties: List<XMLProductProperty>,
+    val transformationToApply: List<XMLProductProperty>,
     val inputs: List<XMLTransformationIO>,
     val outputs: List<XMLTransformationIO>
 ) {
-    class XMLTransformationIO(val id: String, val productType: String, val quantity: Double) {
+    class XMLTransformationIO(val id: String, val inventoryId: String, val quantity: Int) {
         companion object {
             fun fromElement(element: Element): XMLTransformationIO {
                 return XMLTransformationIO(
                     element.getAttribute("id"),
-                    element.getAttribute("productType"),
-                    element.getAttribute("quantity").toDouble(),
+                    element.getAttribute("inventoryId"),
+                    element.getAttribute("quantity").toInt(),
                 )
             }
         }
@@ -108,7 +116,12 @@ class XMLTransformation(
             return XMLTransformation(
                 element.getAttribute("id"),
                 element.getAttribute("activityId"),
-                element.getAttribute("productId"),
+                getElementsFrom(element.childNodes)
+                    .filter { it.nodeName == XMLProcess.PRODUCT_PROPERTY_TRANSFORMATION_LABEL }
+                    .map { XMLProductProperty.fromElement(it) },
+                getElementsFrom(element.childNodes)
+                    .filter { it.nodeName == XMLProcess.TRANSFORMATION_TO_APPLY_LABEL }
+                    .map { XMLProductProperty.fromElement(it) },
                 getElementsFrom(element.childNodes)
                     .filter { it.nodeName == XMLProcess.TRANSFORMATION_INPUT_LABEL }
                     .map { XMLTransformationIO.fromElement(it) },
@@ -131,15 +144,23 @@ class XMLSequenceFlow(val id: String, val sourceRef: String, val targetRef: Stri
             )
         }
     }
+
+    fun toCondition(places: Map<String, Place>): ExclusiveSplitCondition {
+        return ExclusiveSplitCondition(
+            places.getValue(id),
+            places.getValue(id+"_product"),
+            name == "default"
+        ) { return@ExclusiveSplitCondition if (name == "default") false else Random.nextDouble() <= name!!.toDouble() }
+    }
 }
 
-class XMLAccessory(val id: String, val name: String, val quantity: String) {
+class XMLAccessory(val id: String, val name: String, val quantity: Int) {
     companion object {
         fun fromElement(element: Element): XMLAccessory {
             return XMLAccessory(
                 element.getAttribute("id"),
                 element.getAttribute("name"),
-                element.getAttribute("quantity")
+                element.getAttribute("quantity").toInt()
             )
         }
     }
@@ -151,6 +172,18 @@ class XMLExecutor(val id: String, val name: String) {
             return XMLExecutor(
                 element.getAttribute("id"),
                 element.getAttribute("name"),
+            )
+        }
+    }
+}
+
+class XMLInventory(val id: String, val name: String, val startQuantity: Int) {
+    companion object {
+        fun fromElement(element: Element): XMLInventory {
+            return XMLInventory(
+                element.getAttribute("id"),
+                element.getAttribute("name"),
+                element.getAttribute("startQuantity").toInt()
             )
         }
     }
@@ -168,14 +201,35 @@ fun getListOf(type: String, fromElement: Element): List<String> {
         .map { it.textContent }
 }
 
-class XMLStartEvent(override val id: String, override val outgoings: List<String>) : XMLElement {
+class XMLProductRequest(val id: String, val productProperties: List<XMLProductProperty>, val quantity: Int) {
+    companion object {
+        fun fromElement(element: Element): XMLProductRequest {
+            return XMLProductRequest(
+                element.getAttribute("id"),
+                getElementsFrom(element.childNodes)
+                    .filter { it.nodeName == XMLProcess.PRODUCT_PROPERTY_LABEL }
+                    .map { XMLProductProperty.fromElement(it) },
+                element.getAttribute("quantity").toInt()
+            )
+        }
+    }
+
+    fun toProductRequest(): ProductRequest {
+        return ProductRequest(productProperties.associate { it.key to it.value }, quantity)
+    }
+}
+
+class XMLStartEvent(
+    override val id: String,
+    override val outgoings: List<String>,
+) : XMLElement {
     override val incomings = emptyList<String>()
 
     companion object {
         fun fromElement(element: Element): XMLStartEvent {
             return XMLStartEvent(
                 element.getAttribute("id"),
-                getListOf(XMLProcess.OUTGOING_LABEL, element)
+                getListOf(XMLProcess.OUTGOING_LABEL, element),
             )
         }
     }
@@ -200,6 +254,7 @@ class XMLTask(
     override val incomings: List<String>,
     val name: String
 ) : XMLElement {
+
     companion object {
         fun fromElement(element: Element): XMLTask {
             return XMLTask(
@@ -304,7 +359,6 @@ class XMLProcess(xmlFile: File) {
         const val INCOMING_LABEL = "bpmn:incoming"
         const val OUTGOING_LABEL = "bpmn:outgoing"
         const val EXTENSION_ELEMENTS_LABEL = "bpmn:extensionElements"
-        const val PRODUCT_LABEL = "factory:product"
         const val TRANSFORMATION_LABEL = "factory:transformation"
         const val SEQUENCE_FLOW_LABEL = "bpmn:sequenceFlow"
         const val START_EVENT_LABEL = "bpmn:startEvent"
@@ -318,6 +372,11 @@ class XMLProcess(xmlFile: File) {
         const val ACCESSORY_LABEL = "factory:accessory"
         const val ACCESSORY_COMPATIBILITY_LABEL = "factory:accessoryCompatibility"
         const val COMPATIBILITY_LABEL = "factory:compatibility"
+        const val PRODUCT_PROPERTY_LABEL = "factory:productProperty"
+        const val PRODUCT_PROPERTY_TRANSFORMATION_LABEL = "factory:transformationProductProperty"
+        const val TRANSFORMATION_TO_APPLY_LABEL = "factory:transformationProductPropertyToApply"
+        const val INVENTORY_LABEL = "factory:inventory"
+        const val PRODUCT_REQUEST_LABEL = "factory:productRequest"
     }
 
     private val document: Document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlFile)
@@ -329,13 +388,12 @@ class XMLProcess(xmlFile: File) {
     private val root = document.documentElement
     private val process = root.getElementsByTagName(PROCESS_LABEL).item(0) as Element
 
-    val finalProducts = getXMLProducts()
-    private fun getXMLProducts(): Map<String, XMLProduct> {
+    val productRequests = getXMLProductRequest()
+    private fun getXMLProductRequest(): Map<String, XMLProductRequest> {
         val extensionElements = process.getElementsByTagName(EXTENSION_ELEMENTS_LABEL).item(0).childNodes
         return getElementsFrom(extensionElements)
-            .filter { it.nodeName == PRODUCT_LABEL }
-            .map { XMLProduct.fromElement(it) }
-            .filter { it.finalQuantity != null }
+            .filter { it.nodeName == PRODUCT_REQUEST_LABEL }
+            .map { XMLProductRequest.fromElement(it) }
             .associateBy { it.id }
     }
 
@@ -379,6 +437,14 @@ class XMLProcess(xmlFile: File) {
         val executorsElements = process.getElementsByTagName(EXECUTOR_LABEL)
         return getElementsFrom(executorsElements)
             .map { XMLExecutor.fromElement(it) }
+            .associateBy { it.id }
+    }
+
+    val inventories = getXMLInventories()
+    private fun getXMLInventories(): Map<String, XMLInventory> {
+        val inventoryElements = process.getElementsByTagName(INVENTORY_LABEL)
+        return getElementsFrom(inventoryElements)
+            .map { XMLInventory.fromElement(it) }
             .associateBy { it.id }
     }
 
