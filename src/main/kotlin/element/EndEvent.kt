@@ -2,6 +2,7 @@ package element
 
 import org.kalasim.Component
 import place.Place
+import token.ProductToken
 import transition.Transition
 
 class EndEvent(
@@ -35,6 +36,7 @@ class EndEvent(
             // Move from product input to product output
             val productToken = transition.getPlace("inputProduct").take(tokenId)
             transition.getPlace("outputProduct").add(productToken)
+            (productToken as ProductToken).productProperties.forEach { k, v -> println("${productToken.ids}->$k: $v") }
         } else {
             standby()
         }
