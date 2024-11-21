@@ -2,10 +2,10 @@
 <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:factory="http://factory/bpi/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1er0sk9" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="17.7.1">
   <bpmn:process id="Process_04xw0yr" isExecutable="false">
     <bpmn:extensionElements>
-      <factory:productRequest id="ProductRequest_jdu47es" quantity="5">
+      <factory:productRequest id="ProductRequest_jdu47es" quantity="50">
         <factory:productProperty key="type" value="A" />
       </factory:productRequest>
-      <factory:productRequest id="ProductRequest_sie84h6" quantity="5">
+      <factory:productRequest id="ProductRequest_sie84h6" quantity="50">
         <factory:productProperty key="type" value="B" />
       </factory:productRequest>
       <factory:compatibility id="Compatibility_6yg5mdo" time="1" timeUnit="m" idActivity="Activity_0uqznj7" idExecutor="ExecutorActivity_1k7n3ca" />
@@ -13,7 +13,7 @@
       <factory:compatibility id="Compatibility_9xalqna" time="1" timeUnit="m" idActivity="Activity_143dkap" idExecutor="ExecutorActivity_135tym1" />
       <factory:compatibility id="Compatibility_ha2vbb8" time="2" timeUnit="m" idActivity="Activity_143dkap" idExecutor="ExecutorActivity_10spwzg" />
       <factory:compatibility id="Compatibility_xwzn9o7" time="2" timeUnit="m" idActivity="Activity_143dkap" idExecutor="ExecutorActivity_1j18tne" />
-      <factory:compatibility id="Compatibility_0v4puxv" time="24" timeUnit="h" idActivity="Activity_0bhseax" idExecutor="ExecutorActivity_1nuba1d" />
+      <factory:compatibility id="Compatibility_0v4puxv" time="1" timeUnit="m" idActivity="Activity_0bhseax" idExecutor="ExecutorActivity_1nuba1d" />
       <factory:compatibility id="Compatibility_9kay40x" time="1" timeUnit="m" idActivity="Activity_0w9lerg" idExecutor="ExecutorActivity_1sguspo" />
       <factory:compatibility id="Compatibility_7ixlc4k" time="1" timeUnit="m" idActivity="Activity_0w9lerg" idExecutor="ExecutorActivity_0gaqybj" />
       <factory:compatibility id="Compatibility_4fnkg7r" time="0" timeUnit="s" idActivity="Activity_1rnoauy" idExecutor="ExecutorActivity_1xy9cfd" />

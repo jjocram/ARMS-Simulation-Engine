@@ -70,7 +70,7 @@ class Activity(
                 outputProduct
             )
             compatibilities.forEach { compatibility ->
-                compatibility.executor.addJob(job, compatibility.duration, compatibility.accessories,)
+                compatibility.executor.addJob(job, compatibility.duration, compatibility.accessories)
             }
 
             // Activate all passive executors

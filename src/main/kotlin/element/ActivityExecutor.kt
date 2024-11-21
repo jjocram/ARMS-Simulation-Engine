@@ -1,5 +1,6 @@
 package element
 
+import metrics.ResourceMetric
 import org.kalasim.Component
 import place.Place
 import token.ControlToken
@@ -25,7 +26,7 @@ class Job(
     }
 }
 
-class ActivityExecutor(id: String, name: String?) : Component(name ?: id) {
+class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
     class ExecutorJob(val job: Job, val duration: Duration, val accessories: List<ResourceRequest>) {
         val resourcesToTake get() = job.resourcesToTake
         val resourceToProduce get() = job.resourceToProduce
@@ -40,9 +41,13 @@ class ActivityExecutor(id: String, name: String?) : Component(name ?: id) {
         fun moveTokens() = job.moveTokens()
     }
 
+    val jobsMetrics = ResourceMetric()
+
     private val jobs = mutableListOf<ExecutorJob>()
-    fun addJob(job: Job, duration: Duration, accessories: List<ResourceRequest>) =
+    fun addJob(job: Job, duration: Duration, accessories: List<ResourceRequest>) {
         jobs.add(ExecutorJob(job, duration, accessories))
+        jobsMetrics.add()
+    }
 
     val countJobs: Int get() = jobs.count()
 
@@ -55,6 +60,7 @@ class ActivityExecutor(id: String, name: String?) : Component(name ?: id) {
             if (job.allAccessoriesAvailable && job.allResourcesAvailable) { // All condition to start working are checked
                 // This executor will work on this job
                 job.take()
+                jobsMetrics.take()
 
                 // Take accessory tokens
                 val accessoryTokens = job.accessories.map { Pair(it.resource, it.resource.take(it.quantity)) }

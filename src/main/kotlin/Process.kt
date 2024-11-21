@@ -7,6 +7,8 @@ import kotlin.random.Random
 class Process(file: File) {
     private val xmlProcess = XMLProcess(file)
 
+    val totalProductRequest = xmlProcess.productRequests.map { it.value.quantity  }.sum()
+
     val places = (xmlProcess.xmlElements.values
         .map { it.outgoings + it.incomings }
         .flatten() + listOf("end"))

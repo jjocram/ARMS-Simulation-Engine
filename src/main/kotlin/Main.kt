@@ -17,8 +17,14 @@ fun main(args: Array<String>) {
 
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
-                if (process.places.getValue("end").count() == 10 && process.places.getValue("end_product").count() == 10) {
-                    println("There are 10 token in the last place")
+                if (process.places.getValue("end").count() == process.totalProductRequest && process.places.getValue("end_product").count() == process.totalProductRequest) {
+                    println("There are 100 token in the last place")
+                    process.executors.forEach { _, executor ->
+                        println("""Id: ${executor.id} (${executor.name})
+                            |   maxQueueLength: ${executor.jobsMetrics.max}
+                            |   busy: ${executor.stateTimeline.summed().getValue(ComponentState.SCHEDULED)}
+                            |   idle: ${executor.stateTimeline.summed().getValue(ComponentState.PASSIVE)}""".trimMargin())
+                    }
                     stopSimulation()
                 }
 
