@@ -1,3 +1,4 @@
+import kotlinx.datetime.Instant
 import org.kalasim.*
 import java.io.File
 import kotlin.system.exitProcess
@@ -9,11 +10,11 @@ fun main(args: Array<String>) {
         exitProcess(1)
     }
 
-    createSimulation {
+    val startFromEpoch: Long = 1727769600
+
+    createSimulation(startDate = Instant.fromEpochSeconds(startFromEpoch)) {
         enableComponentLogger()
         val process = Process(processFile)
-        process.executors
-        process.bpmnElements
 
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
