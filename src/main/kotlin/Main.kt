@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
                     println("There are 100 token in the last place")
                     process.executors.forEach { _, executor ->
                         println("""Id: ${executor.id} (${executor.name})
-                            |   maxQueueLength: ${executor.jobsMetrics.max}
+                            |   maxWaitTimeInQueue: ${executor.jobsInQueueMetrics.max}
                             |   busy: ${executor.stateTimeline.summed().getValue(ComponentState.SCHEDULED)}
                             |   idle: ${executor.stateTimeline.summed().getValue(ComponentState.PASSIVE)}""".trimMargin())
                     }
