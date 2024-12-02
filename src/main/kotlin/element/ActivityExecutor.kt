@@ -2,6 +2,7 @@ package element
 
 import metrics.TimeDeltaMetric
 import org.kalasim.Component
+import org.kalasim.ComponentState
 import place.Place
 import token.ControlToken
 import token.ProductToken
@@ -45,6 +46,9 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
 
         fun moveTokens() = job.moveTokens()
     }
+
+    val totalIdleTime: Double get() = stateTimeline.summed().filter { (k, _) ->  k !in listOf(ComponentState.SCHEDULED)}.values.sum()
+    val totalBusyTime: Double get() = stateTimeline.summed().getValue(ComponentState.SCHEDULED)
 
     val jobsInQueueMetrics = TimeDeltaMetric()
 
