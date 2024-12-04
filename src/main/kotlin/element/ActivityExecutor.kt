@@ -2,7 +2,6 @@ package element
 
 import metrics.TimeDeltaMetric
 import org.kalasim.Component
-import org.kalasim.ComponentState
 import place.Place
 import token.ControlToken
 import token.ProductToken
@@ -17,6 +16,7 @@ class Job(
     val productToken: ProductToken,
     val outputControl: Place,
     val outputProduct: Place,
+    val activityId: String
 ) {
     private val id: String = UUID.randomUUID().toString()
     var taken = false
@@ -29,6 +29,26 @@ class Job(
 
     override fun hashCode(): Int {
         return id.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Job
+
+        if (taken != other.taken) return false
+        if (resourcesToTake != other.resourcesToTake) return false
+        if (resourceToProduce != other.resourceToProduce) return false
+        if (controlToken != other.controlToken) return false
+        if (productToken != other.productToken) return false
+        if (outputControl != other.outputControl) return false
+        if (outputProduct != other.outputProduct) return false
+        if (activityId != other.activityId) return false
+        if (id != other.id) return false
+        if (allResourcesAvailable != other.allResourcesAvailable) return false
+
+        return true
     }
 }
 
@@ -47,15 +67,16 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
         fun moveTokens() = job.moveTokens()
     }
 
-    val totalIdleTime: Double get() = stateTimeline.summed().filter { (k, _) ->  k !in listOf(ComponentState.SCHEDULED)}.values.sum()
-    val totalBusyTime: Double get() = stateTimeline.summed().getValue(ComponentState.SCHEDULED)
-
-    val jobsInQueueMetrics = TimeDeltaMetric()
+    val jobsInQueueMetrics: MutableMap<String, TimeDeltaMetric> = mutableMapOf()
+    val timeByActivities = mutableMapOf<String, TimeDeltaMetric>()
 
     private val jobs = mutableListOf<ExecutorJob>()
     fun addJob(job: Job, duration: Duration, accessories: List<ResourceRequest>) {
         jobs.add(ExecutorJob(job, duration, accessories))
-        jobsInQueueMetrics.add(job, env.now)
+
+        val metricToSet = jobsInQueueMetrics.getOrDefault(job.activityId, TimeDeltaMetric())
+        metricToSet.add(job, env.now)
+        jobsInQueueMetrics[job.activityId] = metricToSet
     }
 
     val countJobs: Int get() = jobs.count()
@@ -69,7 +90,8 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
             if (job.allAccessoriesAvailable && job.allResourcesAvailable) { // All condition to start working are checked
                 // This executor will work on this job
                 job.take()
-                jobsInQueueMetrics.complete(job.job, env.now)
+                jobsInQueueMetrics.getValue(job.job.activityId).complete(job.job, env.now)
+                timeByActivities.getOrPut(job.job.activityId) { TimeDeltaMetric() }.add(job.job, env.now)
 
                 // Take accessory tokens
                 val accessoryTokens = job.accessories.map { Pair(it.resource, it.resource.take(it.quantity)) }
@@ -95,6 +117,8 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
                     }
                     it.resource.add(tokens)
                 }
+
+                timeByActivities.getValue(job.job.activityId).complete(job.job, env.now)
             } else {
                 // Skip this job for now
                 jobs.add(job)

@@ -1,4 +1,9 @@
 import kotlinx.datetime.Instant
+import metrics.Metric
+import metrics.metricsByActivity
+import metrics.totalBusyTime
+import metrics.totalIdleTime
+import metrics.waitTimeInQueue
 import org.json.JSONException
 import org.json.JSONObject
 import org.kalasim.*
@@ -40,9 +45,16 @@ fun main(args: Array<String>) {
                         json.put("executors", process.executors.map { (_, executor) ->
                             mapOf<String, Any>(
                                 "id" to executor.id,
-                                "maxWaitTimeInQueue" to executor.jobsInQueueMetrics.max,
+                                "maxWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MAX),
                                 "busy" to executor.totalBusyTime,
-                                "idle" to executor.totalIdleTime
+                                "idle" to executor.totalIdleTime,
+                                "activities" to executor.metricsByActivity.map {
+                                    mapOf<String, Any>(
+                                        "id" to it.key,
+                                        "maxWaitTimeInQueue" to it.value.getValue("queue").max,
+                                        "busy" to it.value.getValue("busy").sum
+                                    )
+                                }
                             )
                         })
                     } catch (e: JSONException) {
@@ -56,12 +68,7 @@ fun main(args: Array<String>) {
                         e.printStackTrace()
                     }
 
-
                     process.executors.forEach { _, executor ->
-                        println("""Id: ${executor.id} (${executor.name})
-                            |   maxWaitTimeInQueue: ${executor.jobsInQueueMetrics.max}
-                            |   busy: ${executor.stateTimeline.summed().getValue(ComponentState.SCHEDULED)}
-                            |   idle: ${executor.stateTimeline.summed().getValue(ComponentState.PASSIVE)}""".trimMargin())
                     }
                     stopSimulation()
                 }

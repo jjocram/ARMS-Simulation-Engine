@@ -23,5 +23,7 @@ class TimeDeltaMetric {
 
     val max: Long get() = jobsDelta.values.filter{ it.end != null }.maxOfOrNull { it.delta.inWholeSeconds / 60 } ?: -1
     val min: Long get() = jobsDelta.values.filter{ it.end != null }.minOfOrNull { it.delta.inWholeSeconds / 60 } ?: -1
-    val avg: Double get() = jobsDelta.values.filter{ it.end != null }.map { it.delta.inWholeSeconds / 60 }.average()
+    val mean: Double get() = jobsDelta.values.filter{ it.end != null }.map { it.delta.inWholeSeconds / 60 }.average()
+    val count: Int get() = jobsDelta.values.count { it.end != null }
+    val sum: Long get() = jobsDelta.values.filter { it.end != null }.sumOf { it.delta.inWholeSeconds / 60 }
 }

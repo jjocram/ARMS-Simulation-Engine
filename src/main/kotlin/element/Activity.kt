@@ -25,7 +25,7 @@ class Transformation(
 )
 
 class Activity(
-    id: String,
+    val id: String,
     value: String,
     val inputs: List<Pair<Place, Place>>,
     val outputControl: Place,
@@ -67,7 +67,8 @@ class Activity(
                 controlToken,
                 productToken,
                 outputControl,
-                outputProduct
+                outputProduct,
+                id
             )
             compatibilities.forEach { compatibility ->
                 compatibility.executor.addJob(job, compatibility.duration, compatibility.accessories)
