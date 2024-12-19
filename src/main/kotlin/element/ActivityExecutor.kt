@@ -67,7 +67,7 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
         fun moveTokens() = job.moveTokens()
     }
 
-    val jobsInQueueMetrics: MutableMap<String, TimeDeltaMetric> = mutableMapOf()
+    val jobsInQueueMetrics = mutableMapOf<String, TimeDeltaMetric>()
     val timeByActivities = mutableMapOf<String, TimeDeltaMetric>()
 
     private val jobs = mutableListOf<ExecutorJob>()

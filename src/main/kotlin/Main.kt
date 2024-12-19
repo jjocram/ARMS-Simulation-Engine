@@ -1,6 +1,7 @@
 import kotlinx.datetime.Instant
 import metrics.Metric
 import metrics.metricsByActivity
+import metrics.processedItems
 import metrics.totalBusyTime
 import metrics.totalIdleTime
 import metrics.waitTimeInQueue
@@ -46,13 +47,19 @@ fun main(args: Array<String>) {
                             mapOf<String, Any>(
                                 "id" to executor.id,
                                 "maxWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MAX),
+                                "avgWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MEAN),
+                                "sumWaitTimeInQueue" to executor.metricsByActivity.map { it.value.getValue("queue").sum }.sum(),
                                 "busy" to executor.totalBusyTime,
                                 "idle" to executor.totalIdleTime,
+                                "processedItems" to executor.processedItems,
                                 "activities" to executor.metricsByActivity.map {
                                     mapOf<String, Any>(
                                         "id" to it.key,
                                         "maxWaitTimeInQueue" to it.value.getValue("queue").max,
-                                        "busy" to it.value.getValue("busy").sum
+                                        "avgWaitTimeInQueue" to it.value.getValue("queue").mean,
+                                        "sumWaitTimeInQueue" to it.value.getValue("queue").sum,
+                                        "busy" to it.value.getValue("busy").sum,
+                                        "processedItems" to it.value.getValue("queue").count,
                                     )
                                 }
                             )

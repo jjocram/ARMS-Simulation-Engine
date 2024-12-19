@@ -14,6 +14,9 @@ val ActivityExecutor.waitTimeInQueue: Map<Metric, Number>
         Metric.MEAN to jobsInQueueMetrics.values.map { it.mean }.average()
     )
 
+val ActivityExecutor.processedItems: Int
+    get() = timeByActivities.map { it.value.count }.sum()
+
 val ActivityExecutor.totalIdleTime: Double
     get() = stateTimeline.summed().getValue(ComponentState.PASSIVE)
 
