@@ -33,22 +33,28 @@ fun main(args: Array<String>) {
 
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
-                if (process.places.getValue("end").count() == process.totalProductRequest && process.places.getValue("end_product").count() == process.totalProductRequest) {
+                if (process.places.getValue("end")
+                        .count() == process.totalProductRequest && process.places.getValue("end_product")
+                        .count() == process.totalProductRequest
+                ) {
                     println("There are ${process.places.getValue("end").count()} tokens in the last place")
 
                     val json = JSONObject()
 
                     try {
-                        json.put("simulation", mapOf<String, Any>(
-                            "totalTime" to env.totalTime()
-                        ))
+                        json.put(
+                            "simulation", mapOf<String, Any>(
+                                "totalTime" to env.totalTime()
+                            )
+                        )
 
                         json.put("executors", process.executors.map { (_, executor) ->
                             mapOf<String, Any>(
                                 "id" to executor.id,
                                 "maxWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MAX),
                                 "avgWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MEAN),
-                                "sumWaitTimeInQueue" to executor.metricsByActivity.map { it.value.getValue("queue").sum }.sum(),
+                                "sumWaitTimeInQueue" to executor.metricsByActivity.map { it.value.getValue("queue").sum }
+                                    .sum(),
                                 "busy" to executor.totalBusyTime,
                                 "idle" to executor.totalIdleTime,
                                 "processedItems" to executor.processedItems,
@@ -75,8 +81,6 @@ fun main(args: Array<String>) {
                         e.printStackTrace()
                     }
 
-                    process.executors.forEach { _, executor ->
-                    }
                     stopSimulation()
                 }
 
