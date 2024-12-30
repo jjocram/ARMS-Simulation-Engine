@@ -48,7 +48,7 @@ fun main(args: Array<String>) {
                             )
                         )
 
-                        json.put("executors", process.executors.map { (_, executor) ->
+                        json.put("executors", process.executors.values.flatten().map { executor ->
                             mapOf<String, Any>(
                                 "id" to executor.id,
                                 "maxWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MAX),

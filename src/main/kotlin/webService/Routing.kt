@@ -50,10 +50,9 @@ fun Application.configureRouting() {
                         ) {
                             println("There are ${process.places.getValue("end").count()} tokens in the last place")
 
-                            val json = JSONObject()
                             result = MetricResult(
                                 simulation = SimulationResult(env.totalTime()),
-                                executors = process.executors.map { (_, executor) ->
+                                executors = process.executors.values.flatten().map { executor ->
                                     ExecutorResult(
                                         id = executor.id,
                                         maxWaitTimeInQueue = executor.waitTimeInQueue.getValue(Metric.MAX) as Long,

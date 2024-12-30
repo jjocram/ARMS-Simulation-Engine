@@ -2,12 +2,13 @@ import element.*
 import place.Place
 import token.ResourceToken
 import java.io.File
+import kotlin.collections.List
 import kotlin.random.Random
 
 class Process(file: File) {
     private val xmlProcess = XMLProcess(file)
 
-    val totalProductRequest = xmlProcess.productRequests.map { it.value.quantity  }.sum()
+    val totalProductRequest = xmlProcess.productRequests.map { it.value.quantity }.sum()
 
     val places = (xmlProcess.xmlElements.values
         .map { it.outgoings + it.incomings }
@@ -34,15 +35,24 @@ class Process(file: File) {
         }
     }
 
-    val executors = xmlProcess.executors.mapValues { ActivityExecutor(it.value.id, it.value.name) }
+    val executors = xmlProcess.executors.mapValues { xmlExecutor ->
+        List(xmlExecutor.value.quantity) {
+            ActivityExecutor(
+                "${xmlExecutor.value.id}-$it",
+                "${xmlExecutor.value.name}-{it}"
+            )
+        }
+    }
 
     private val compatibilities = xmlProcess.compatibilities.mapValues { (_, compatibility) ->
-        Compatibility(
-            executors.getValue(compatibility.idExecutor),
-            compatibility.productProperties.map { it.key to it.value }.toMap(),
-            compatibility.accessories.map { ResourceRequest(accessories.getValue(it.id), it.quantity) },
-            compatibility.duration
-        )
+        executors.getValue(compatibility.idExecutor).map {
+            Compatibility(
+                it,
+                compatibility.productProperties.associate { it.key to it.value },
+                compatibility.accessories.map { ResourceRequest(accessories.getValue(it.id), it.quantity) },
+                compatibility.duration
+            )
+        }
     }
 
     private val transformations = xmlProcess.transformations.mapValues { (_, transformation) ->
@@ -54,8 +64,8 @@ class Process(file: File) {
                 )
             }, // TODO: fix inventory input without inventoryId
             transformation.outputs.map { ResourceRequest(inventories.getValue(it.id), it.quantity) },
-            transformation.productProperties.map { it.key to it.value }.toMap(),
-            transformation.transformationToApply.map { it.key to it.value }.toMap(),
+            transformation.productProperties.associate { it.key to it.value },
+            transformation.transformationToApply.associate { it.key to it.value },
         )
     }
 
@@ -169,7 +179,7 @@ class Process(file: File) {
                         places.getValue(outgoingFlow),
                         places.getValue(outgoingFlow + "_product"),
                         xmlProcess.compatibilities.filter { it.value.idActivity == element.id }
-                            .map { compatibilities.getValue(it.key) },
+                            .map { compatibilities.getValue(it.key) }.flatten(),
                         xmlProcess.transformations.filter { it.value.idActivity == element.id }
                             .map { transformations.getValue(it.key) },
                     )

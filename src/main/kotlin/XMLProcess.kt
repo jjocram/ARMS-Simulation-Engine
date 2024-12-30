@@ -166,12 +166,13 @@ class XMLAccessory(val id: String, val name: String, val quantity: Int) {
     }
 }
 
-class XMLExecutor(val id: String, val name: String) {
+class XMLExecutor(val id: String, val name: String, val quantity: Int) {
     companion object {
         fun fromElement(element: Element): XMLExecutor {
             return XMLExecutor(
                 element.getAttribute("id"),
                 element.getAttribute("name"),
+                element.getAttribute("quantity").toInt()
             )
         }
     }

@@ -196,44 +196,44 @@
     <bpmn:sequenceFlow id="Flow_0havwmy" name="default" sourceRef="Gateway_1y3j05f" targetRef="Activity_1hwlgbl" type="bpmn:SequenceFlow" />
     <bpmn:sequenceFlow id="Flow_0m66inz" name="default" sourceRef="Gateway_0iak37j" targetRef="Activity_1hwlgbl" type="bpmn:SequenceFlow" />
     <bpmn:sequenceFlow id="Flow_0psw9m5" sourceRef="Activity_1hwlgbl" targetRef="Gateway_0riz40n" />
-    <factory:executor id="ExecutorActivity_17gs9q5" name="PP1">
+    <factory:executor id="ExecutorActivity_17gs9q5" name="PP1" quantity="1">
       <bpmn:incoming>Flow_15zyz4k</bpmn:incoming>
       <bpmn:incoming>Flow_0diu0oy</bpmn:incoming>
       <bpmn:incoming>Flow_0lg649z</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_1k7n3ca" name="PP3">
+    <factory:executor id="ExecutorActivity_1k7n3ca" name="PP3" quantity="1">
       <bpmn:incoming>Flow_10cv5y6</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_0005bq2" name="PP2">
+    <factory:executor id="ExecutorActivity_0005bq2" name="PP2" quantity="1">
       <bpmn:incoming>Flow_1vm5hsb</bpmn:incoming>
       <bpmn:incoming>Flow_1u0y5n4</bpmn:incoming>
       <bpmn:incoming>Flow_0pyjhq7</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_135tym1" name="O1">
+    <factory:executor id="ExecutorActivity_135tym1" name="O1" quantity="1">
       <bpmn:incoming>Flow_0jxv0ww</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_10spwzg" name="O2">
+    <factory:executor id="ExecutorActivity_10spwzg" name="O2" quantity="1">
       <bpmn:incoming>Flow_1wtc28c</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_1j18tne" name="O3">
+    <factory:executor id="ExecutorActivity_1j18tne" name="O3" quantity="1">
       <bpmn:incoming>Flow_0axj8q0</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_1nuba1d" name="Washing machine">
+    <factory:executor id="ExecutorActivity_1nuba1d" name="Washing machine" quantity="1">
       <bpmn:incoming>Flow_0onu4fd</bpmn:incoming>
       <bpmn:incoming>Flow_1bda5bg</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_1sguspo" name="O4">
+    <factory:executor id="ExecutorActivity_1sguspo" name="O4" quantity="1">
       <bpmn:incoming>Flow_08h75wj</bpmn:incoming>
       <bpmn:incoming>Flow_1rh2435</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_0gaqybj" name="O5">
+    <factory:executor id="ExecutorActivity_0gaqybj" name="O5" quantity="1">
       <bpmn:incoming>Flow_0mk7em8</bpmn:incoming>
       <bpmn:incoming>Flow_1ccw1ta</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_1xy9cfd" name="Painter">
+    <factory:executor id="ExecutorActivity_1xy9cfd" name="Painter" quantity="1">
       <bpmn:incoming>Flow_01sc4cl</bpmn:incoming>
     </factory:executor>
-    <factory:executor id="ExecutorActivity_0ci5aeq" name="O6">
+    <factory:executor id="ExecutorActivity_0ci5aeq" name="O6" quantity="1">
       <bpmn:incoming>Flow_0ysdper</bpmn:incoming>
     </factory:executor>
     <factory:connection id="Flow_0ysdper" sourceRef="Activity_1hwlgbl" targetRef="ExecutorActivity_0ci5aeq" />
