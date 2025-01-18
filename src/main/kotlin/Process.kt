@@ -35,6 +35,10 @@ class Process(file: File) {
         }
     }
 
+    /**
+     * Map an executor (its id) in the model to a list of executors representing the different instances give by the quantity.
+     * Each executor will have a unique id given by the executor id in the model and the instance number [0, quantity[
+     */
     val executors = xmlProcess.executors.mapValues { xmlExecutor ->
         List(xmlExecutor.value.quantity) {
             ActivityExecutor(
