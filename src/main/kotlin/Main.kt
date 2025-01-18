@@ -31,6 +31,8 @@ fun main(args: Array<String>) {
         enableComponentLogger()
         val process = Process(processFile)
 
+        dependency { process.executors }
+
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
                 if (process.places.getValue("end")
