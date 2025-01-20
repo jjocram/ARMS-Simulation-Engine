@@ -18,7 +18,7 @@ class Job(
     val outputProduct: Place,
     val activityId: String
 ) {
-    private val id: String = UUID.randomUUID().toString()
+    val id: String = UUID.randomUUID().toString()
     var taken = false
     val allResourcesAvailable: Boolean get() = resourcesToTake.all { it.isEnough }
 
@@ -67,8 +67,25 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
         fun moveTokens() = job.moveTokens()
     }
 
+    /**
+     * Maps how much time a job spent in the queue. Grouped by the activity which assigned the job
+     */
     val jobsInQueueMetrics = mutableMapOf<String, TimeDeltaMetric>()
+
+    /**
+     * Maps how much time this executor spent for an activity
+     */
     val timeByActivities = mutableMapOf<String, TimeDeltaMetric>()
+
+    /**
+     * List representing the ids of jobs taken by this executor
+     */
+    val takenJobs = mutableListOf<String>()
+
+    /**
+     * List representing the ids of jobs assigned but not taken by this executor
+     */
+    val notTakenJobs = mutableListOf<String>()
 
     private val jobs = mutableListOf<ExecutorJob>()
     fun addJob(job: Job, duration: Duration, accessories: List<ResourceRequest>) {
@@ -81,7 +98,10 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
 
     val countJobs: Int get() = jobs.count()
 
+    fun getJobsDetails() = jobs.map { job -> job.job.id }
+
     override fun repeatedProcess(): Sequence<Component> = sequence {
+        jobs.filter { it.isTaken && !takenJobs.contains(it.job.id)}.forEach { notTakenJobs.add(it.job.id) }
         jobs.removeAll { it.isTaken }
         while (jobs.isEmpty()) passivate()
 
@@ -92,6 +112,7 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
                 job.take()
                 jobsInQueueMetrics.getValue(job.job.activityId).complete(job.job, env.now)
                 timeByActivities.getOrPut(job.job.activityId) { TimeDeltaMetric() }.add(job.job, env.now)
+                takenJobs.add(job.job.id)
 
                 // Take accessory tokens
                 val accessoryTokens = job.accessories.map { Pair(it.resource, it.resource.take(it.quantity)) }

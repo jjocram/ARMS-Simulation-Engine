@@ -1,3 +1,4 @@
+import collectorComponent.QueueSnapshotCollector
 import kotlinx.datetime.Instant
 import metrics.Metric
 import metrics.metricsByActivity
@@ -13,6 +14,7 @@ import java.io.FileWriter
 import java.io.IOException
 import java.io.PrintWriter
 import kotlin.system.exitProcess
+import kotlin.time.Duration
 
 fun Environment.totalTime(): Long {
     return (now - startDate).inWholeSeconds / 60
@@ -28,10 +30,12 @@ fun main(args: Array<String>) {
     val startFromEpoch: Long = 1727769600
 
     createSimulation(startDate = Instant.fromEpochSeconds(startFromEpoch)) {
-        enableComponentLogger()
+        //enableComponentLogger()
         val process = Process(processFile)
 
         dependency { process.executors }
+
+        val queuesSnapshotCollector = QueueSnapshotCollector(Duration.parse("10m"))
 
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
@@ -40,6 +44,7 @@ fun main(args: Array<String>) {
                         .count() == process.totalProductRequest
                 ) {
                     println("There are ${process.places.getValue("end").count()} tokens in the last place")
+                    println(queuesSnapshotCollector.means)
 
                     val json = JSONObject()
 
