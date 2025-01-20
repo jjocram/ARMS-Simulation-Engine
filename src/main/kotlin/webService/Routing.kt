@@ -86,6 +86,7 @@ fun Application.configureRouting() {
 
             }.run()
 
+            call.response.headers.append("Access-Control-Allow-Origin", "*")
             if (result != null) {
                 call.respond(result)
             } else {
