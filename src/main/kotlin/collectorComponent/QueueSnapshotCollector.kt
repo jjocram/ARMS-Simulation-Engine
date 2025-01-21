@@ -1,8 +1,11 @@
 package collectorComponent
 
 import element.ActivityExecutor
+import org.jetbrains.kotlinx.dataframe.math.std
 import org.kalasim.Component
 import totalTime
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.time.Duration
 
 
@@ -50,5 +53,28 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration) : Component("QueueSn
         get() {
             cleanUp()
             return queuesMetric.mapValues { it.value.map { it.count }.average() }
+        }
+
+    val variances: Map<String, Double>
+        get() {
+            cleanUp()
+            return queuesMetric.mapValues { (executor, metrics) ->
+                metrics.map { it.count }.map { (it - means[executor]!!).pow(2) }.average()
+            }
+        }
+
+    val stds: Map<String, Double>
+        get() {
+            cleanUp()
+            return queuesMetric.mapValues { sqrt(variances[it.key]!!) }
+        }
+
+    val metrics: Map<String, Map<String, Double>>
+        get() = queuesMetric.mapValues {
+            mapOf(
+                "mean" to means[it.key]!!,
+                "variance" to variances[it.key]!!,
+                "std" to stds[it.key]!!
+            )
         }
 }

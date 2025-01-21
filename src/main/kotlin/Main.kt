@@ -44,7 +44,7 @@ fun main(args: Array<String>) {
                         .count() == process.totalProductRequest
                 ) {
                     println("There are ${process.places.getValue("end").count()} tokens in the last place")
-                    println(queuesSnapshotCollector.means)
+                    println(queuesSnapshotCollector.metrics)
 
                     val json = JSONObject()
 
