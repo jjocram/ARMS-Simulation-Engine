@@ -2,7 +2,6 @@ package collectorComponent
 
 import element.ActivityExecutor
 import org.kalasim.Component
-import org.kalasim.misc.time.meanOf
 import totalTime
 import kotlin.time.Duration
 
@@ -16,9 +15,11 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration) : Component("QueueSn
         val count: Int get() = jobsInQueue.count()
     }
 
-    val executorsMap: Map<String, List<ActivityExecutor>> = get()
+    private val executorsMap: Map<String, List<ActivityExecutor>> = get()
 
-    val queuesMetric: MutableMap<String, MutableList<QueueMetric>> = mutableMapOf()
+    private val queuesMetric: MutableMap<String, MutableList<QueueMetric>> = mutableMapOf()
+
+    private var cleanUpDone = false
 
     override fun repeatedProcess(): Sequence<Component> = sequence {
         val snapshotTime = env.totalTime()
@@ -27,7 +28,6 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration) : Component("QueueSn
             executorsList.forEach { executor ->
                 val queueMetric = QueueMetric(snapshotTime, executor.getJobsDetails() as MutableList<String>)
 
-                queuesMetric[executor.id]?.let { it.forEach { it.removeAll(executor.notTakenJobs) } }
                 queuesMetric.getOrPut(executor.id) { mutableListOf() }.add(queueMetric)
             }
         }
@@ -35,5 +35,20 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration) : Component("QueueSn
         hold(snapshotTimeout)
     }
 
-    val means: Map<String, Double> get() = queuesMetric.mapValues { it.value.map { it.count }.average() }
+    private fun cleanUp() {
+        if (!cleanUpDone) {
+            cleanUpDone = true
+            executorsMap.forEach { _, executorsList ->
+                executorsList.forEach { executor ->
+                    queuesMetric[executor.id]?.forEach { it.removeAll(executor.notTakenJobs) }
+                }
+            }
+        }
+    }
+
+    val means: Map<String, Double>
+        get() {
+            cleanUp()
+            return queuesMetric.mapValues { it.value.map { it.count }.average() }
+        }
 }
