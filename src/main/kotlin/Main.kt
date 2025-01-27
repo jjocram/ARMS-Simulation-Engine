@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
 
         dependency { process.executors }
 
-        val queuesSnapshotCollector = QueueSnapshotCollector(Duration.parse("10m"))
+        val queuesSnapshotCollector = QueueSnapshotCollector(Duration.parse("5s"))
 
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {

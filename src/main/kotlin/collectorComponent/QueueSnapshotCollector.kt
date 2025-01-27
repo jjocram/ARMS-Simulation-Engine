@@ -1,11 +1,9 @@
 package collectorComponent
 
 import element.ActivityExecutor
-import org.jetbrains.kotlinx.dataframe.math.std
+import org.jetbrains.kotlinx.dataframe.math.varianceAndMean
 import org.kalasim.Component
 import totalTime
-import kotlin.math.pow
-import kotlin.math.sqrt
 import kotlin.time.Duration
 
 
@@ -49,32 +47,14 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration) : Component("QueueSn
         }
     }
 
-    val means: Map<String, Double>
-        get() {
-            cleanUp()
-            return queuesMetric.mapValues { it.value.map { it.count }.average() }
-        }
-
-    val variances: Map<String, Double>
-        get() {
-            cleanUp()
-            return queuesMetric.mapValues { (executor, metrics) ->
-                metrics.map { it.count }.map { (it - means[executor]!!).pow(2) }.average()
-            }
-        }
-
-    val stds: Map<String, Double>
-        get() {
-            cleanUp()
-            return queuesMetric.mapValues { sqrt(variances[it.key]!!) }
-        }
-
-    val metrics: Map<String, Map<String, Double>>
+    val metrics: Map<String, Map<String, Number>>
         get() = queuesMetric.mapValues {
+            cleanUp()
+            val stats = it.value.map { it.count }.varianceAndMean()
             mapOf(
-                "mean" to means[it.key]!!,
-                "variance" to variances[it.key]!!,
-                "std" to stds[it.key]!!
+                "mean" to stats.mean,
+                "variance" to stats.variance,
+                "std" to stats.std(0), // TODO: check which degrees of freedom (ddof) to use
             )
         }
 }
