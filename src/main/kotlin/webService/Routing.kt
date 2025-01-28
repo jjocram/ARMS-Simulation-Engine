@@ -72,7 +72,11 @@ fun Application.configureRouting() {
                                                 busy = it.value.getValue("busy").sum,
                                                 processedItems = it.value.getValue("queue").count,
                                             )
-                                        }
+                                        },
+                                        avgQueueLength = executor.queueLengthMetric.mean,
+                                        varQueueLength = executor.queueLengthMetric.variance,
+                                        stdQueueLength = executor.queueLengthMetric.std,
+                                        maxQueueLength = executor.queueLengthMetric.max
                                     )
                                 }
                             )

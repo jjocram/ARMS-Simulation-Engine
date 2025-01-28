@@ -2,7 +2,6 @@ package metrics
 
 import org.jetbrains.kotlinx.dataframe.math.varianceAndMean
 import org.kalasim.SimTime
-import org.kalasim.misc.roundAny
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.time.Duration
@@ -11,7 +10,8 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration, private val timeZero
     class Snapshot(val time: SimTime, var count: Int)
 
     val snapshots = mutableListOf<Snapshot>()
-    private var max = 0
+    var max = 0
+        private set
 
     fun jobTaken(startTime: SimTime, endTime: SimTime) {
         // Add missing snapshot from last Snapshot to endTime with count = 0. One each snapshotTimeout
@@ -29,11 +29,10 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration, private val timeZero
         }
     }
 
-    val metrics: Map<String, Number>
-        get() {
+    private val metrics: Map<String, Number> by lazy {
             val metric = snapshots.map { it.count }.varianceAndMean()
 
-            return mapOf(
+            mapOf(
                 "avg" to BigDecimal(metric.mean.takeIf { it.isFinite() } ?: 0.0).setScale(2, RoundingMode.FLOOR).toDouble(),
                 "variance" to BigDecimal(metric.variance.takeIf { it.isFinite() } ?: 0.0).setScale(2, RoundingMode.FLOOR).toDouble(),
                 "std" to BigDecimal(metric.std(0).takeIf { it.isFinite() } ?: 0.0).setScale(2, RoundingMode.FLOOR).toDouble(), // TODO: understand which degree of freedom
@@ -41,4 +40,9 @@ class QueueSnapshotCollector(val snapshotTimeout: Duration, private val timeZero
                 "min" to 0
             )
         }
+
+    val mean: Double get() = this.metrics.getValue("avg") as Double
+    val variance: Double get() = this.metrics.getValue("variance") as Double
+    val std: Double get() = this.metrics.getValue("std") as Double
+    val min: Int get() = this.metrics.getValue("min") as Int
 }

@@ -51,18 +51,17 @@ fun main(args: Array<String>) {
                         )
 
                         json.put("executors", process.executors.values.flatten().map { executor ->
-                            val queueLengthMetrics = executor.queueLengthMetric.metrics
                             mapOf<String, Any>(
                                 "id" to executor.id,
                                 "maxWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MAX),
                                 "avgWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MEAN),
                                 "sumWaitTimeInQueue" to executor.metricsByActivity.map { it.value.getValue("queue").sum }
                                     .sum(),
-                                "avgQueueLength" to queueLengthMetrics["avg"]!!,
-                                "varQueueLength" to queueLengthMetrics["variance"]!!,
-                                "stdQueueLength" to queueLengthMetrics["std"]!!,
-                                "maxQueueLength" to queueLengthMetrics["max"]!!,
-//                                "minQueueLength" to queueLengthMetrics["min"]!!,
+                                "avgQueueLength" to executor.queueLengthMetric.mean,
+                                "varQueueLength" to executor.queueLengthMetric.variance,
+                                "stdQueueLength" to executor.queueLengthMetric.std,
+                                "maxQueueLength" to executor.queueLengthMetric.max,
+//                                "minQueueLength" to executor.queueLengthMetric.min,
                                 "busy" to executor.totalBusyTime,
                                 "idle" to executor.totalIdleTime,
                                 "processedItems" to executor.processedItems,
