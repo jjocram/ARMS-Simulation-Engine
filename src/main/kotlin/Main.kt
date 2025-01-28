@@ -1,4 +1,3 @@
-import collectorComponent.QueueSnapshotCollector
 import kotlinx.datetime.Instant
 import metrics.Metric
 import metrics.metricsByActivity
@@ -14,7 +13,6 @@ import java.io.FileWriter
 import java.io.IOException
 import java.io.PrintWriter
 import kotlin.system.exitProcess
-import kotlin.time.Duration
 
 fun Environment.totalTime(): Long {
     return (now - startDate).inWholeSeconds / 60
@@ -35,8 +33,6 @@ fun main(args: Array<String>) {
 
         dependency { process.executors }
 
-        val queuesSnapshotCollector = QueueSnapshotCollector(Duration.parse("5s"))
-
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
                 if (process.places.getValue("end")
@@ -44,7 +40,6 @@ fun main(args: Array<String>) {
                         .count() == process.totalProductRequest
                 ) {
                     println("There are ${process.places.getValue("end").count()} tokens in the last place")
-                    println(queuesSnapshotCollector.metrics)
 
                     val json = JSONObject()
 
@@ -56,12 +51,18 @@ fun main(args: Array<String>) {
                         )
 
                         json.put("executors", process.executors.values.flatten().map { executor ->
+                            val queueLengthMetrics = executor.queueLengthMetric.metrics
                             mapOf<String, Any>(
                                 "id" to executor.id,
                                 "maxWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MAX),
                                 "avgWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MEAN),
                                 "sumWaitTimeInQueue" to executor.metricsByActivity.map { it.value.getValue("queue").sum }
                                     .sum(),
+                                "avgQueueLength" to queueLengthMetrics["avg"]!!,
+                                "varQueueLength" to queueLengthMetrics["variance"]!!,
+                                "stdQueueLength" to queueLengthMetrics["std"]!!,
+                                "maxQueueLength" to queueLengthMetrics["max"]!!,
+//                                "minQueueLength" to queueLengthMetrics["min"]!!,
                                 "busy" to executor.totalBusyTime,
                                 "idle" to executor.totalIdleTime,
                                 "processedItems" to executor.processedItems,

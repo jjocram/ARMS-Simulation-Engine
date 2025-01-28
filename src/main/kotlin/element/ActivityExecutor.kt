@@ -1,5 +1,6 @@
 package element
 
+import metrics.QueueSnapshotCollector
 import metrics.TimeDeltaMetric
 import org.kalasim.Component
 import place.Place
@@ -77,15 +78,8 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
      */
     val timeByActivities = mutableMapOf<String, TimeDeltaMetric>()
 
-    /**
-     * List representing the ids of jobs taken by this executor
-     */
-    val takenJobs = mutableListOf<String>()
+    val queueLengthMetric = QueueSnapshotCollector(Duration.parse("5s"), env.startDate)
 
-    /**
-     * List representing the ids of jobs assigned but not taken by this executor
-     */
-    val notTakenJobs = mutableListOf<String>()
 
     private val jobs = mutableListOf<ExecutorJob>()
     fun addJob(job: Job, duration: Duration, accessories: List<ResourceRequest>) {
@@ -98,10 +92,7 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
 
     val countJobs: Int get() = jobs.count()
 
-    fun getJobsDetails() = jobs.map { job -> job.job.id }
-
     override fun repeatedProcess(): Sequence<Component> = sequence {
-        jobs.filter { it.isTaken && !takenJobs.contains(it.job.id)}.forEach { notTakenJobs.add(it.job.id) }
         jobs.removeAll { it.isTaken }
         while (jobs.isEmpty()) passivate()
 
@@ -110,9 +101,9 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
             if (job.allAccessoriesAvailable && job.allResourcesAvailable) { // All condition to start working are checked
                 // This executor will work on this job
                 job.take()
-                jobsInQueueMetrics.getValue(job.job.activityId).complete(job.job, env.now)
+                val jobTimes = jobsInQueueMetrics.getValue(job.job.activityId).complete(job.job, env.now)
                 timeByActivities.getOrPut(job.job.activityId) { TimeDeltaMetric() }.add(job.job, env.now)
-                takenJobs.add(job.job.id)
+                queueLengthMetric.jobTaken(jobTimes.start, jobTimes.end!!)
 
                 // Take accessory tokens
                 val accessoryTokens = job.accessories.map { Pair(it.resource, it.resource.take(it.quantity)) }
