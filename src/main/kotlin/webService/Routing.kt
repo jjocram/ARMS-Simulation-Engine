@@ -2,13 +2,19 @@ package webService
 
 import Process
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
 import io.ktor.server.application.*
 import io.ktor.server.http.content.file
 import io.ktor.server.request.receiveChannel
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.cio.writeChannel
 import io.ktor.utils.io.copyAndClose
+import io.ktor.utils.io.core.readBytes
+import io.ktor.utils.io.read
 import kotlinx.datetime.Instant
 import metrics.Metric
 import metrics.metricsByActivity
@@ -28,12 +34,27 @@ import java.io.IOException
 import java.io.PrintWriter
 import kotlin.collections.component1
 import kotlin.collections.component2
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureRouting() {
     routing {
         post("/simulate") {
             val processFile = File("process.bpmn")
-            call.receiveChannel().copyAndClose(processFile.writeChannel())
+
+            val multipartData = call.receiveMultipart()
+            multipartData.forEachPart { part ->
+                when (part) {
+                    is PartData.FileItem -> {
+                        part.provider().copyAndClose(processFile.writeChannel())
+                    }
+
+                    else -> {
+                        println("It is not something we are interested in right now")
+                    }
+                }
+                part.dispose()
+            }
 
             val startFromEpoch: Long = 1727769600
 
@@ -83,15 +104,19 @@ fun Application.configureRouting() {
                             stopSimulation()
                         }
 
-                        standby()
+                        hold(5.seconds)
                     }
                 }
 
             }.run()
 
+
+            call.response.headers.append("Access-Control-Allow-Origin", "*")
             if (result != null) {
+                println("Result is $result")
                 call.respond(result)
             } else {
+                println("Result is null")
                 call.respond(HttpStatusCode.InternalServerError)
             }
         }
