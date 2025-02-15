@@ -1,4 +1,6 @@
 package scripting
 
-class ScriptContext {
+import token.ProductToken
+
+class ScriptContext(val productToken: ProductToken) {
 }
