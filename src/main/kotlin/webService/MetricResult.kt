@@ -24,6 +24,10 @@ data class ExecutorResult(
     val busy: Double,
     val idle: Double,
     val processedItems: Int,
+    val avgQueueLength: Double,
+    val varQueueLength: Double,
+    val stdQueueLength: Double,
+    val maxQueueLength: Int,
     val activities: List<ExecutorActivityResult>
 )
 

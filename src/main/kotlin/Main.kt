@@ -13,6 +13,7 @@ import java.io.FileWriter
 import java.io.IOException
 import java.io.PrintWriter
 import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.minutes
 
 fun Environment.totalTime(): Long {
     return (now - startDate).inWholeSeconds / 60
@@ -28,8 +29,10 @@ fun main(args: Array<String>) {
     val startFromEpoch: Long = 1727769600
 
     createSimulation(startDate = Instant.fromEpochSeconds(startFromEpoch)) {
-        enableComponentLogger()
+        //enableComponentLogger()
         val process = Process(processFile)
+
+        dependency { process.executors }
 
         object : Component("Watcher") {
             override fun repeatedProcess(): Sequence<Component> = sequence {
@@ -48,13 +51,18 @@ fun main(args: Array<String>) {
                             )
                         )
 
-                        json.put("executors", process.executors.map { (_, executor) ->
+                        json.put("executors", process.executors.values.flatten().map { executor ->
                             mapOf<String, Any>(
                                 "id" to executor.id,
                                 "maxWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MAX),
                                 "avgWaitTimeInQueue" to executor.waitTimeInQueue.getValue(Metric.MEAN),
                                 "sumWaitTimeInQueue" to executor.metricsByActivity.map { it.value.getValue("queue").sum }
                                     .sum(),
+                                "avgQueueLength" to executor.queueLengthMetric.mean,
+                                "varQueueLength" to executor.queueLengthMetric.variance,
+                                "stdQueueLength" to executor.queueLengthMetric.std,
+                                "maxQueueLength" to executor.queueLengthMetric.max,
+//                                "minQueueLength" to executor.queueLengthMetric.min,
                                 "busy" to executor.totalBusyTime,
                                 "idle" to executor.totalIdleTime,
                                 "processedItems" to executor.processedItems,
@@ -84,7 +92,7 @@ fun main(args: Array<String>) {
                     stopSimulation()
                 }
 
-                standby()
+                hold(5.minutes)
             }
         }
 

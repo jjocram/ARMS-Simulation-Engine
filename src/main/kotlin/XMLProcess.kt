@@ -149,8 +149,9 @@ class XMLSequenceFlow(val id: String, val sourceRef: String, val targetRef: Stri
         return ExclusiveSplitCondition(
             places.getValue(id),
             places.getValue(id+"_product"),
-            name == "default"
-        ) { return@ExclusiveSplitCondition if (name == "default") false else Random.nextDouble() <= name!!.toDouble() }
+            name == "default",
+            "ctx.productToken.getProperty(\"loan\").toInt() > 5000"
+        )
     }
 }
 
@@ -166,12 +167,13 @@ class XMLAccessory(val id: String, val name: String, val quantity: Int) {
     }
 }
 
-class XMLExecutor(val id: String, val name: String) {
+class XMLExecutor(val id: String, val name: String, val quantity: Int) {
     companion object {
         fun fromElement(element: Element): XMLExecutor {
             return XMLExecutor(
                 element.getAttribute("id"),
                 element.getAttribute("name"),
+                element.getAttribute("quantity").toInt()
             )
         }
     }

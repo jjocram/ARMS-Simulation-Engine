@@ -13,7 +13,6 @@ repositories {
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
     implementation("com.github.holgerbrandl:kalasim:1.0.2")
     implementation("org.slf4j:slf4j-log4j12:2.0.16")
 
@@ -25,10 +24,8 @@ dependencies {
     implementation(libs.ktor.server.config.yaml)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
-}
 
-tasks.test {
-    useJUnitPlatform()
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jsr223:1.9.0")
 }
 
 kotlin {

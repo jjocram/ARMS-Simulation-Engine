@@ -5,7 +5,7 @@ import org.kalasim.SimTime
 import kotlin.time.Duration
 
 class TimeDeltaMetric {
-    private class TimeDelta(val start: SimTime, var end: SimTime?) {
+    class TimeDelta(val start: SimTime, var end: SimTime?) {
         val delta: Duration
             get() {
                 require(end != null) { "Job delta without end" }
@@ -16,9 +16,10 @@ class TimeDeltaMetric {
     private val jobsDelta: MutableMap<Job, TimeDelta> = mutableMapOf()
 
     fun add(job: Job, time: SimTime) = jobsDelta.set(job, TimeDelta(time, null))
-    fun complete(job: Job, time: SimTime) {
+    fun complete(job: Job, time: SimTime): TimeDelta {
         require(jobsDelta.containsKey(job)) { "Job (${job}) not found" }
         jobsDelta.getValue(job).end = time
+        return jobsDelta[job]!!
     }
 
     val max: Long get() = jobsDelta.values.filter{ it.end != null }.maxOfOrNull { it.delta.inWholeSeconds / 60 } ?: -1

@@ -1,5 +1,6 @@
 package element
 
+import metrics.QueueSnapshotCollector
 import metrics.TimeDeltaMetric
 import org.kalasim.Component
 import place.Place
@@ -18,7 +19,7 @@ class Job(
     val outputProduct: Place,
     val activityId: String
 ) {
-    private val id: String = UUID.randomUUID().toString()
+    val id: String = UUID.randomUUID().toString()
     var taken = false
     val allResourcesAvailable: Boolean get() = resourcesToTake.all { it.isEnough }
 
@@ -67,8 +68,18 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
         fun moveTokens() = job.moveTokens()
     }
 
+    /**
+     * Maps how much time a job spent in the queue. Grouped by the activity which assigned the job
+     */
     val jobsInQueueMetrics = mutableMapOf<String, TimeDeltaMetric>()
+
+    /**
+     * Maps how much time this executor spent for an activity
+     */
     val timeByActivities = mutableMapOf<String, TimeDeltaMetric>()
+
+    val queueLengthMetric = QueueSnapshotCollector(Duration.parse("5s"), env.startDate)
+
 
     private val jobs = mutableListOf<ExecutorJob>()
     fun addJob(job: Job, duration: Duration, accessories: List<ResourceRequest>) {
@@ -90,8 +101,9 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
             if (job.allAccessoriesAvailable && job.allResourcesAvailable) { // All condition to start working are checked
                 // This executor will work on this job
                 job.take()
-                jobsInQueueMetrics.getValue(job.job.activityId).complete(job.job, env.now)
+                val jobTimes = jobsInQueueMetrics.getValue(job.job.activityId).complete(job.job, env.now)
                 timeByActivities.getOrPut(job.job.activityId) { TimeDeltaMetric() }.add(job.job, env.now)
+                queueLengthMetric.jobTaken(jobTimes.start, jobTimes.end!!)
 
                 // Take accessory tokens
                 val accessoryTokens = job.accessories.map { Pair(it.resource, it.resource.take(it.quantity)) }
