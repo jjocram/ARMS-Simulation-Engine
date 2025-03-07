@@ -57,58 +57,63 @@ fun Application.configureRouting() {
             }
 
             val startFromEpoch: Long = 1727769600
-
             var result: MetricResult? = null
-            createSimulation(startDate = Instant.fromEpochSeconds(startFromEpoch)) {
-                //enableComponentLogger()
-                val process = Process(processFile)
+            var exception: Exception? = null
 
-                object : Component("Watcher") {
-                    override fun repeatedProcess(): Sequence<Component> = sequence {
-                        if (process.places.getValue("end")
-                                .count() == process.totalProductRequest && process.places.getValue("end_product")
-                                .count() == process.totalProductRequest
-                        ) {
-                            println("There are ${process.places.getValue("end").count()} tokens in the last place")
+            try {
+                createSimulation(startDate = Instant.fromEpochSeconds(startFromEpoch)) {
+                    //enableComponentLogger()
+                    val process = Process(processFile)
 
-                            result = MetricResult(
-                                simulation = SimulationResult(env.totalTime()),
-                                executors = process.executors.values.flatten().map { executor ->
-                                    ExecutorResult(
-                                        id = executor.id,
-                                        maxWaitTimeInQueue = executor.waitTimeInQueue.getValue(Metric.MAX) as Long,
-                                        avgWaitTimeInQueue = executor.waitTimeInQueue.getValue(Metric.MEAN) as Double,
-                                        sumWaitTimeInQueue = executor.metricsByActivity
-                                            .map { it.value.getValue("queue").sum }
-                                            .sum(),
-                                        busy = executor.totalBusyTime,
-                                        idle = executor.totalIdleTime,
-                                        processedItems = executor.processedItems,
-                                        activities = executor.metricsByActivity.map {
-                                            ExecutorActivityResult(
-                                                id = it.key,
-                                                maxWaitTimeInQueue = it.value.getValue("queue").max,
-                                                avgWaitTimeInQueue = it.value.getValue("queue").mean,
-                                                sumWaitTimeInQueue = it.value.getValue("queue").sum,
-                                                busy = it.value.getValue("busy").sum,
-                                                processedItems = it.value.getValue("queue").count,
-                                            )
-                                        },
-                                        avgQueueLength = executor.queueLengthMetric.mean,
-                                        varQueueLength = executor.queueLengthMetric.variance,
-                                        stdQueueLength = executor.queueLengthMetric.std,
-                                        maxQueueLength = executor.queueLengthMetric.max
-                                    )
-                                }
-                            )
-                            stopSimulation()
+                    object : Component("Watcher") {
+                        override fun repeatedProcess(): Sequence<Component> = sequence {
+                            if (process.places.getValue("end")
+                                    .count() == process.totalProductRequest && process.places.getValue("end_product")
+                                    .count() == process.totalProductRequest
+                            ) {
+                                println("There are ${process.places.getValue("end").count()} tokens in the last place")
+
+                                result = MetricResult(
+                                    simulation = SimulationResult(env.totalTime()),
+                                    executors = process.executors.values.flatten().map { executor ->
+                                        ExecutorResult(
+                                            id = executor.id,
+                                            maxWaitTimeInQueue = executor.waitTimeInQueue.getValue(Metric.MAX) as Long,
+                                            avgWaitTimeInQueue = executor.waitTimeInQueue.getValue(Metric.MEAN) as Double,
+                                            sumWaitTimeInQueue = executor.metricsByActivity
+                                                .map { it.value.getValue("queue").sum }
+                                                .sum(),
+                                            busy = executor.totalBusyTime,
+                                            idle = executor.totalIdleTime,
+                                            processedItems = executor.processedItems,
+                                            activities = executor.metricsByActivity.map {
+                                                ExecutorActivityResult(
+                                                    id = it.key,
+                                                    maxWaitTimeInQueue = it.value.getValue("queue").max,
+                                                    avgWaitTimeInQueue = it.value.getValue("queue").mean,
+                                                    sumWaitTimeInQueue = it.value.getValue("queue").sum,
+                                                    busy = it.value.getValue("busy").sum,
+                                                    processedItems = it.value.getValue("queue").count,
+                                                )
+                                            },
+                                            avgQueueLength = executor.queueLengthMetric.mean,
+                                            varQueueLength = executor.queueLengthMetric.variance,
+                                            stdQueueLength = executor.queueLengthMetric.std,
+                                            maxQueueLength = executor.queueLengthMetric.max
+                                        )
+                                    }
+                                )
+                                stopSimulation()
+                            }
+
+                            hold(5.seconds)
                         }
-
-                        hold(5.seconds)
                     }
-                }
 
-            }.run()
+                }.run()
+            } catch (e: Exception) {
+                exception = e
+            }
 
 
             call.response.headers.append("Access-Control-Allow-Origin", "*")
@@ -117,7 +122,9 @@ fun Application.configureRouting() {
                 call.respond(result)
             } else {
                 println("Result is null")
-                call.respond(HttpStatusCode.InternalServerError)
+                println(exception)
+                call.response.status(HttpStatusCode.InternalServerError)
+                call.respond(SimulationError("Something went wrong"))
             }
         }
     }

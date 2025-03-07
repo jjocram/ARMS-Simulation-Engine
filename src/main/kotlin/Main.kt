@@ -13,6 +13,7 @@ import java.io.FileWriter
 import java.io.IOException
 import java.io.PrintWriter
 import kotlin.system.exitProcess
+import kotlin.time.Duration.Companion.minutes
 
 fun Environment.totalTime(): Long {
     return (now - startDate).inWholeSeconds / 60
@@ -91,7 +92,7 @@ fun main(args: Array<String>) {
                     stopSimulation()
                 }
 
-                standby()
+                hold(5.minutes)
             }
         }
 
