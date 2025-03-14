@@ -5,4 +5,9 @@ This is the simulation engine for ARMS: Activity-Resource Modelling Simulator
 1. Clone this repository
 2. Run the webserver with: `./gradlew run`
 3. Send an BPMN file to `http://127.0.0.1:8080/simulate`
-   - cURL command: `curl -X POST --data-binary "@file.bpmn" http://127.0.0.1:8080/simulate`
+   - You can use the modeler in [this repository](https://github.com/jjocram/ARMS-Editor)
+
+# To deploy
+1. `az login`
+2. `az acr login --name armscontainers`
+3. `docker buildx build --platform linux/amd64 --push -t armscontainers.azurecr.io/arms-simulator:<version> .`
