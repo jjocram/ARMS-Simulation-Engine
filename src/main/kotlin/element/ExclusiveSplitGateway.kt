@@ -33,9 +33,9 @@ class ExclusiveSplitGateway(
             if (id != null) {
                 val conditionContext = ScriptContext(it.getPlace("inputProduct").tokens.first { it.ids == id } as ProductToken)
 
-                val scriptOutput = scriptingExecutor.evalString(condition.scriptCode, conditionContext).getOrThrow()
+//                val scriptOutput = scriptingExecutor.evalString(condition.scriptCode, conditionContext).getOrThrow()
 
-                val conditionResult = condition.default || scriptOutput
+                val conditionResult = condition.default || Math.random() <= 0.8 // TODO: fix this: scriptOutput
 
                 return@Transition if (conditionResult) id else null
             } else {
