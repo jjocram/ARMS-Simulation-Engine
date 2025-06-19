@@ -2,6 +2,9 @@ package metrics
 
 import element.ActivityExecutor
 import org.kalasim.ComponentState
+import org.kalasim.toLifeCycleRecord
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
 
 enum class Metric {
     MAX, MIN, MEAN, SUM, COUNT
@@ -18,10 +21,10 @@ val ActivityExecutor.processedItems: Int
     get() = timeByActivities.map { it.value.count }.sum()
 
 val ActivityExecutor.totalIdleTime: Double
-    get() = stateTimeline.summed().getValue(ComponentState.PASSIVE)
+    get() = toLifeCycleRecord().inPassive.toDouble(DurationUnit.MINUTES)
 
 val ActivityExecutor.totalBusyTime: Double
-    get() = stateTimeline.summed().getValue(ComponentState.SCHEDULED)
+    get() = toLifeCycleRecord().inScheduled.toDouble(DurationUnit.MINUTES)
 
 val ActivityExecutor.metricsByActivity: Map<String, Map<String, TimeDeltaMetric>>
     get() = timeByActivities.mapValues { (key, value) ->

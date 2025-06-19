@@ -1,6 +1,6 @@
 package token
 
-class ProductToken: Token() {
+class ProductToken(val productRequestId: String): Token() {
     val productProperties: MutableMap<String, String> = mutableMapOf()
 
     fun setProperty(name: String, value: String) {

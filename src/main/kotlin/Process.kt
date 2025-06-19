@@ -43,7 +43,7 @@ class Process(file: File) {
         List(xmlExecutor.value.quantity) {
             ActivityExecutor(
                 "${xmlExecutor.value.id}-$it",
-                "${xmlExecutor.value.name}-{it}"
+                "${xmlExecutor.value.name}-$it"
             )
         }
     }
@@ -51,10 +51,12 @@ class Process(file: File) {
     private val compatibilities = xmlProcess.compatibilities.mapValues { (_, compatibility) ->
         executors.getValue(compatibility.idExecutor).map {
             Compatibility(
+                compatibility.id,
                 it,
                 compatibility.productProperties.associate { it.key to it.value },
                 compatibility.accessories.map { ResourceRequest(accessories.getValue(it.id), it.quantity) },
-                compatibility.duration
+                compatibility.duration,
+                compatibility.batchSize
             )
         }
     }

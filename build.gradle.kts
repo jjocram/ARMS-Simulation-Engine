@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.holgerbrandl:kalasim:1.0.2")
+    implementation("com.github.holgerbrandl:kalasim:1.0.6")
     implementation("org.slf4j:slf4j-log4j12:2.0.16")
 
     implementation(libs.ktor.server.content.negotiation)

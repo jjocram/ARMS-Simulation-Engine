@@ -48,7 +48,8 @@ class XMLCompatibility(
     val idActivity: String,
     val idExecutor: String,
     val productProperties: List<XMLProductProperty>,
-    val accessories: List<XMLAccessoryCompatibility>
+    val accessories: List<XMLAccessoryCompatibility>,
+    val batchSize: Int
 ) {
     class XMLAccessoryCompatibility(val id: String, val quantity: Int) {
         companion object {
@@ -74,7 +75,8 @@ class XMLCompatibility(
                     .map { XMLProductProperty.fromElement(it) },
                 getElementsFrom(element.childNodes)
                     .filter { it.nodeName == XMLProcess.ACCESSORY_COMPATIBILITY_LABEL }
-                    .map { XMLAccessoryCompatibility.fromElement(it) }
+                    .map { XMLAccessoryCompatibility.fromElement(it) },
+                element.getAttribute("batch").toInt()
             )
         }
     }
@@ -150,7 +152,8 @@ class XMLSequenceFlow(val id: String, val sourceRef: String, val targetRef: Stri
             places.getValue(id),
             places.getValue(id+"_product"),
             name == "default",
-            "ctx.productToken.getProperty(\"loan\").toInt() > 5000"
+//            "ctx.productToken.getProperty(\"loan\").toInt() > 5000"
+            "Math.random() <= 0.8"
         )
     }
 }
@@ -217,7 +220,7 @@ class XMLProductRequest(val id: String, val productProperties: List<XMLProductPr
     }
 
     fun toProductRequest(): ProductRequest {
-        return ProductRequest(productProperties.associate { it.key to it.value }, quantity)
+        return ProductRequest(id, productProperties.associate { it.key to it.value }, quantity)
     }
 }
 
@@ -288,7 +291,7 @@ class XMLTimeEvent(
 
     val duration: Duration
         get() {
-            return 7.day
+            return 7.day // TODO: update to value
         }
 }
 

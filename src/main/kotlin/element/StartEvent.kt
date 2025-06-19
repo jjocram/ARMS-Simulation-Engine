@@ -7,7 +7,7 @@ import token.ProductToken
 import transition.Transition
 import java.util.UUID
 
-class ProductRequest(val productProperties: Map<String, String>, val quantity: Int)
+class ProductRequest(val id: String,  val productProperties: Map<String, String>, val quantity: Int)
 
 class StartEvent(
     id: String,
@@ -33,7 +33,7 @@ class StartEvent(
                 return@map token
             }
             val productTokens = ids.map {
-                val token = ProductToken()
+                val token = ProductToken(product.id)
                 token.push(it)
                 product.productProperties.forEach { k, v -> token.setProperty(k, v) }
                 return@map token

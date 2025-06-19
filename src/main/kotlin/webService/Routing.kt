@@ -62,14 +62,13 @@ fun Application.configureRouting() {
 
             try {
                 createSimulation(startDate = Instant.fromEpochSeconds(startFromEpoch)) {
-                    //enableComponentLogger()
+//                    enableComponentLogger()
                     val process = Process(processFile)
 
                     object : Component("Watcher") {
                         override fun repeatedProcess(): Sequence<Component> = sequence {
-                            if (process.places.getValue("end")
-                                    .count() == process.totalProductRequest && process.places.getValue("end_product")
-                                    .count() == process.totalProductRequest
+                            if (process.places.getValue("end").count() == process.totalProductRequest &&
+                                process.places.getValue("end_product").count() == process.totalProductRequest
                             ) {
                                 println("There are ${process.places.getValue("end").count()} tokens in the last place")
 
@@ -123,6 +122,7 @@ fun Application.configureRouting() {
             } else {
                 println("Result is null")
                 println(exception)
+                println(exception?.stackTraceToString())
                 call.response.status(HttpStatusCode.InternalServerError)
                 call.respond(SimulationError("Something went wrong"))
             }

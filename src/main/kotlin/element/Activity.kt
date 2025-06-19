@@ -1,21 +1,36 @@
 package element
 
 import org.kalasim.Component
+import org.kalasim.StateRequest
 import place.Place
 import token.ControlToken
 import token.ProductToken
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 
 class ResourceRequest(val resource: Place, val quantity: Int) {
     val isEnough: Boolean get() = resource.count() >= quantity
 }
 
 class Compatibility(
+    val id: String,
     val executor: ActivityExecutor,
     val productProperties: Map<String, String>,
     val accessories: List<ResourceRequest>,
     val duration: Duration,
-)
+    val batchSize: Int,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Compatibility) return false
+
+        return this.id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+}
 
 class Transformation(
     val resourcesToTake: List<ResourceRequest>,
@@ -71,11 +86,13 @@ class Activity(
                 id
             )
             compatibilities.forEach { compatibility ->
-                compatibility.executor.addJob(job, compatibility.duration, compatibility.accessories)
+                compatibility.executor.addJob(
+                    job = job,
+                    compatibility = compatibility)
             }
 
-            // Activate all passive executors
-            compatibilities.filter { it.executor.isPassive }.forEach { it.executor.activate() }
+            // Activate all passive and standby executors
+            compatibilities.filter { it.executor.isStandby || it.executor.isPassive }.forEach { it.executor.activate() }
         }
         standby()
     }
