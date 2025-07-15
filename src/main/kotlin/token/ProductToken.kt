@@ -2,6 +2,7 @@ package token
 
 class ProductToken(val productRequestId: String): Token() {
     val productProperties: MutableMap<String, String> = mutableMapOf()
+    private val affinities: MutableMap<String, String> = mutableMapOf()
 
     fun setProperty(name: String, value: String) {
         productProperties.set(name, value)
@@ -15,4 +16,8 @@ class ProductToken(val productRequestId: String): Token() {
     fun apply(transformation: Map<String, String>) {
         transformation.forEach { setProperty(it.key, it.value) }
     }
+
+    fun setExecutorAffinity(activityId: String, executorId: String) = affinities.set(activityId, executorId)
+
+    fun getExecutorAffinity(activityId: String) = affinities.getValue(activityId)
 }

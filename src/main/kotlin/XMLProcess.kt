@@ -153,7 +153,7 @@ class XMLSequenceFlow(val id: String, val sourceRef: String, val targetRef: Stri
             places.getValue(id+"_product"),
             name == "default",
 //            "ctx.productToken.getProperty(\"loan\").toInt() > 5000"
-            "Math.random() <= 0.8"
+            "Math.random() <= 0.05"
         )
     }
 }
@@ -257,16 +257,20 @@ class XMLTask(
     override val id: String,
     override val outgoings: List<String>,
     override val incomings: List<String>,
-    val name: String
+    val name: String,
+    val affinityWith: String?
 ) : XMLElement {
 
     companion object {
         fun fromElement(element: Element): XMLTask {
+            val affinity = element.getAttribute("affinity").takeIf { it.isNotEmpty() && it != "null" }
+
             return XMLTask(
                 element.getAttribute("id"),
                 getListOf(XMLProcess.OUTGOING_LABEL, element),
                 getListOf(XMLProcess.INCOMING_LABEL, element),
-                element.getAttribute("name")
+                element.getAttribute("name"),
+                affinity,
             )
         }
     }

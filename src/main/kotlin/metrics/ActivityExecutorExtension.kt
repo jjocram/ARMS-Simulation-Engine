@@ -11,11 +11,19 @@ enum class Metric {
 }
 
 val ActivityExecutor.waitTimeInQueue: Map<Metric, Number>
-    get() = mapOf(
-        Metric.MAX to jobsInQueueMetrics.values.maxOf { metric -> metric.max },
-        Metric.MIN to jobsInQueueMetrics.values.minOf { metric -> metric.min },
-        Metric.MEAN to jobsInQueueMetrics.values.map { it.mean }.average()
-    )
+    get() = if (jobsInQueueMetrics.values.isEmpty()) {
+        mapOf(
+            Metric.MAX to 0L,
+            Metric.MIN to 0.0,
+            Metric.MEAN to 0.0
+        )
+    } else {
+        mapOf(
+            Metric.MAX to jobsInQueueMetrics.values.maxOf { metric -> metric.max },
+            Metric.MIN to jobsInQueueMetrics.values.minOf { metric -> metric.min },
+            Metric.MEAN to jobsInQueueMetrics.values.map { it.mean }.average()
+        )
+    }
 
 val ActivityExecutor.processedItems: Int
     get() = timeByActivities.map { it.value.count }.sum()

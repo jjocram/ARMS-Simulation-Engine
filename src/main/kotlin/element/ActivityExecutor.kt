@@ -9,6 +9,7 @@ import token.ProductToken
 import token.ResourceToken
 import java.util.UUID
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.microseconds
 
 fun maxMultiplier(available: List<Int>, required: List<Int>): Int {
     return available.zip(required).minOfOrNull { (a, r) -> if (r == 0) Int.MAX_VALUE else a / r } ?: 0
@@ -106,6 +107,7 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
     override fun repeatedProcess(): Sequence<Component> = sequence {
         jobs.removeAll { it.isTaken }
         while (jobs.isEmpty()) passivate()
+
         // Get the first job in the queue. This will be the reference in case of batch
         val firstJob = jobs.firstOrNull { !it.isTaken } // Do not remove the first job from the list of jobs
         if (firstJob == null) return@sequence
@@ -159,10 +161,13 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
         // Take the resources
         firstJob.resourcesToTake.forEach { it.resource.take(it.quantity * batchSize) }
 
-        log("Ready to work on ${batchedJobs.size} of type ${firstJob.compatibility.id}")
         // Wait for the executor to complete the process
         hold(firstJob.compatibility.duration)
-        log("Completed work on ${batchedJobs.size} of type  ${firstJob.compatibility.id}")
+
+        // Assign affinity
+        batchedJobs.forEach { job ->
+            job.job.productToken.setExecutorAffinity(job.job.activityId, this@ActivityExecutor.id)
+        }
 
         // Add tokens to outputs
         batchedJobs.forEach { job -> job.moveTokens() }
@@ -182,5 +187,10 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
 
         // Save time took to work on these jobs
         batchedJobs.forEach { job -> timeByActivities.getValue(job.job.activityId).complete(job.job, env.now) }
+
+        // Wait a very small amount of time to let some other executors that has to use the same accessories to start working. If none is ready then just a very small amount of time is lost
+        // This is a workaround. A proper implementation would require checking if any other executioner can be ready and randomly (or algorithmic) select one.
+        // This breaks the eager mechanism of "I work until I have jobs to do" to a more fair solution (fair > eager)
+        hold(1.microseconds)
     }
 }

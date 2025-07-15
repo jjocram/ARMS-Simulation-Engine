@@ -4,17 +4,12 @@ import Process
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
-import io.ktor.http.content.streamProvider
 import io.ktor.server.application.*
-import io.ktor.server.http.content.file
-import io.ktor.server.request.receiveChannel
 import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.cio.writeChannel
 import io.ktor.utils.io.copyAndClose
-import io.ktor.utils.io.core.readBytes
-import io.ktor.utils.io.read
 import kotlinx.datetime.Instant
 import metrics.Metric
 import metrics.metricsByActivity
@@ -22,24 +17,16 @@ import metrics.processedItems
 import metrics.totalBusyTime
 import metrics.totalIdleTime
 import metrics.waitTimeInQueue
-import org.json.JSONException
-import org.json.JSONObject
 import org.kalasim.Component
 import org.kalasim.createSimulation
-import org.kalasim.enableComponentLogger
 import totalTime
 import java.io.File
-import java.io.FileWriter
-import java.io.IOException
-import java.io.PrintWriter
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureRouting() {
     routing {
         post("/simulate") {
+            call.application.environment.log.info("Simulation requested")
             val processFile = File("process.bpmn")
 
             val multipartData = call.receiveMultipart()
@@ -55,6 +42,7 @@ fun Application.configureRouting() {
                 }
                 part.dispose()
             }
+            call.application.environment.log.info("File received")
 
             val startFromEpoch: Long = 1727769600
             var result: MetricResult? = null
@@ -75,6 +63,7 @@ fun Application.configureRouting() {
                                 result = MetricResult(
                                     simulation = SimulationResult(env.totalTime()),
                                     executors = process.executors.values.flatten().map { executor ->
+                                        val l = executor.waitTimeInQueue
                                         ExecutorResult(
                                             id = executor.id,
                                             maxWaitTimeInQueue = executor.waitTimeInQueue.getValue(Metric.MAX) as Long,
@@ -111,13 +100,14 @@ fun Application.configureRouting() {
 
                 }.run()
             } catch (e: Exception) {
+                log.error(e.message, e)
                 exception = e
             }
 
 
             call.response.headers.append("Access-Control-Allow-Origin", "*")
             if (result != null) {
-                println("Result is $result")
+                call.application.environment.log.info("Result has been generated correctly")
                 call.respond(result)
             } else {
                 println("Result is null")

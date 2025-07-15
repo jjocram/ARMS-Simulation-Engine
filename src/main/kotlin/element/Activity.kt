@@ -47,6 +47,7 @@ class Activity(
     val outputProduct: Place,
     val compatibilities: List<Compatibility>,
     val transformations: List<Transformation>,
+    val affinityWith: String? // Activity with which this activity MUST be use the same executor
 ) : BPMNElement(id, value) {
     override fun repeatedProcess(): Sequence<Component> = sequence {
         while (inputs.any { (control, product) -> control.isNotEmpty() && product.isNotEmpty() }) {
@@ -62,11 +63,16 @@ class Activity(
             val controlToken = inputControl.take(tokenId) as ControlToken
             val productToken = inputProduct.take(tokenId) as ProductToken
 
-            // Find compatibility
+            // Find all possible compatibilities. If affinity_with is not null, then use only the same executor
             val compatibilities = compatibilities
                 .filter { it.productProperties.all { (k, v) -> v == productToken.getProperty(k) } }
+                .let { seq ->
+                    affinityWith?.let {affinityActivity ->
+                        val affinityExecutorId = productToken.getExecutorAffinity(affinityActivity)
+                        seq.filter { it.executor.id === affinityExecutorId }
+                    } ?: seq
+                }
                 .sortedBy { it.executor.countJobs } //TODO: add parameter to choose: isPassive?, queue length?
-//                .first()
 
             // Find transformation
             val transformation =

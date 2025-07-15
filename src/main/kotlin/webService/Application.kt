@@ -8,7 +8,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    log.info("ARMS version: 1.1.a")
+    log.info("ARMS version: 1.2.a")
     configureSerialization()
     configureRouting()
 }
