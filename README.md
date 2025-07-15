@@ -9,6 +9,10 @@ This is the simulation engine for ARMS: Activity-Resource Modelling Simulator
 
 # To deploy
 Docker has to be running on your system
-1. `az login`
-2. `az acr login --name armscontainers`
-3. `docker buildx build --platform linux/amd64 --push -t armscontainers.azurecr.io/arms-simulator:<version> .`
+1. Create the jar with `./gradlew buildFatJar --no-daemon `
+2. `az login`
+3. `az acr login --name armscontainers`
+4. `docker buildx build --platform linux/amd64 --push -t armscontainers.azurecr.io/arms-simulator:<version> .`
+
+# Enhancements to work on:
+1. **Improve inventories**: right now inventories are counters of objects from the same product familiy. This require the needs to have as many as the number of WiPs in the model. Changing how the inventories hold this information to a Map<ProductToken, int> can help. From the perspective of the [modeler](https://github.com/jjocram/ARMS-Editor) this can be achieved as the concept of product requests works (a list of key-value) 
