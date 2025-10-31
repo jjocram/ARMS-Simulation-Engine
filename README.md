@@ -15,4 +15,4 @@ Docker has to be running on your system
 4. `docker buildx build --platform linux/amd64 --push -t armscontainers.azurecr.io/arms-simulator:<version> .`
 
 # Enhancements to work on:
-1. **Improve inventories**: right now inventories are counters of objects from the same product familiy. This require the needs to have as many as the number of WiPs in the model. Changing how the inventories hold this information to a Map<ProductToken, int> can help. From the perspective of the [modeler](https://github.com/jjocram/ARMS-Editor) this can be achieved as the concept of product requests works (a list of key-value) 
+1. **Improve inventories**: right now inventories are counters of objects from the same product family. This requires the needs to have as many as the number of WiPs in the model. Changing how the inventories hold this information to a Map<ProductToken, int> can help. From the perspective of the [modeler](https://github.com/jjocram/ARMS-Editor) this can be achieved as the concept of product requests works (a list of key-value) 
