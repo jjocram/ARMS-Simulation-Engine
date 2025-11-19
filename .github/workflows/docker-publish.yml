@@ -33,6 +33,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Set up JDK for Gradle build
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin        # or 'corretto' if you prefer
+          java-version: '23'           # match your runtime version
+          cache: gradle                # enable Gradle cache for faster builds
+
+      # Make sure gradlew is executable
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # Build the fat JAR
+      - name: Build fat JAR
+        run: ./gradlew buildFatJar --no-daemon
+
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign
