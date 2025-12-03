@@ -105,7 +105,6 @@ fun Application.configureRouting() {
             }
 
 
-            call.response.headers.append("Access-Control-Allow-Origin", "*")
             if (result != null) {
                 call.application.environment.log.info("Result has been generated correctly")
                 call.respond(result)

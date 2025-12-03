@@ -4,7 +4,7 @@ import javax.script.ScriptEngineManager
 import javax.script.SimpleBindings
 
 class ScriptingExecutor {
-    private val engine = ScriptEngineManager().getEngineByName("kotlin")
+    private val engine = ScriptEngineManager().getEngineByExtension("kts")
 
     fun evalString(script: String, context: ScriptContext): Result<Boolean> {
         val bindings = SimpleBindings()

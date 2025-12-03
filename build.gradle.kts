@@ -18,6 +18,7 @@ dependencies {
 
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.core)
+    implementation("io.ktor:ktor-server-cors")
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
@@ -25,7 +26,7 @@ dependencies {
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
 
-    implementation("org.jetbrains.kotlin:kotlin-scripting-jsr223:1.9.0")
+    implementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
 }
 
 kotlin {

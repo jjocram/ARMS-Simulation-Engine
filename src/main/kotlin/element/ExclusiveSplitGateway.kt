@@ -25,13 +25,13 @@ class ExclusiveSplitGateway(
     private val scriptingExecutor = ScriptingExecutor()
 
     val transitions = conditions.mapIndexed { i, condition ->
-        val transition = Transition("${value ?: id}-$i") {
+        val transition = Transition("${value ?: id}-$i") { it ->
             val controlInputIds = it.getPlace("inputControl").tokens.map { it.ids }.toSet()
             val productInputIds = it.getPlace("inputProduct").tokens.map { it.ids }.toSet()
             val id = controlInputIds.intersect(productInputIds).firstOrNull()
 
             if (id != null) {
-                val conditionContext = ScriptContext(it.getPlace("inputProduct").tokens.first { it.ids == id } as ProductToken)
+                val conditionContext = ScriptContext(it.getPlace("inputProduct").tokens.first { token -> token.ids == id } as ProductToken)
 
 //                val scriptOutput = scriptingExecutor.evalString(condition.scriptCode, conditionContext).getOrThrow()
 
