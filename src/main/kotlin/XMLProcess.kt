@@ -7,6 +7,7 @@ import org.w3c.dom.NodeList
 import place.Place
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.math.log
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -148,13 +149,24 @@ class XMLSequenceFlow(val id: String, val sourceRef: String, val targetRef: Stri
     }
 
     fun toCondition(places: Map<String, Place>): ExclusiveSplitCondition {
-        return ExclusiveSplitCondition(
-            places.getValue(id),
-            places.getValue(id+"_product"),
-            name == "default",
-//            "ctx.productToken.getProperty(\"loan\").toInt() > 5000"
-            "Math.random() <= 0.05"
-        )
+        assert(name != null, {"Exclusive split has to have a value assigned"})
+        val isDefault = name == "default"
+
+        return if (isDefault) {
+            ExclusiveSplitCondition(
+                places.getValue(id),
+                places.getValue(id+"_product"),
+                isDefault,
+                ""
+            )
+        } else {
+            ExclusiveSplitCondition(
+                places.getValue(id),
+                places.getValue(id+"_product"),
+                isDefault,
+                "$name"
+            )
+        }
     }
 }
 
