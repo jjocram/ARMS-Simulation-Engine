@@ -26,7 +26,7 @@ class ExclusiveSplitGateway(
     private val scriptingExecutor = ScriptingExecutor()
 
     val transitions = conditions
-        .sortedBy { it.default } // I want that default is the last one
+        .sortedBy { it.default } // I want that default to be the last one
         .mapIndexed { i, condition ->
             val transition = Transition("${value ?: id}-$i") { it ->
                 val controlInputIds = it.getPlace("inputControl").tokens.map { it.ids }.toSet()
