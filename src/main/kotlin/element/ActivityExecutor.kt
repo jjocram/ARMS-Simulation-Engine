@@ -23,6 +23,7 @@ class Job(
     val outputControl: Place,
     val outputProduct: Place,
     val activityId: String,
+    val activityPriority: Int
 ) {
     val id: String = UUID.randomUUID().toString()
     var taken = false
@@ -109,7 +110,9 @@ class ActivityExecutor(val id: String, name: String?) : Component(name ?: id) {
         while (jobs.isEmpty()) passivate()
 
         // Get the first job in the queue. This will be the reference in case of batch
-        val firstJob = jobs.firstOrNull { !it.isTaken } // Do not remove the first job from the list of jobs
+        val firstJob = jobs
+            .sortedByDescending { it.job.activityPriority } // Jobs from activity with higher priority has to be taken first
+            .firstOrNull { !it.isTaken } // Do not remove the first job from the list of jobs
         if (firstJob == null) return@sequence
 
         // If this kind of job has NOT already tried working on this machine and there is not enough batch. Then, move

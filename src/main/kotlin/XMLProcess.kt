@@ -270,12 +270,14 @@ class XMLTask(
     override val outgoings: List<String>,
     override val incomings: List<String>,
     val name: String,
-    val affinityWith: String?
+    val affinityWith: String?,
+    val priority: Int,
 ) : XMLElement {
 
     companion object {
         fun fromElement(element: Element): XMLTask {
             val affinity = element.getAttribute("affinity").takeIf { it.isNotEmpty() && it != "null" }
+            val priority = element.getAttribute("priority").takeIf { it.isNotEmpty() && it != "null" }?.toInt() ?: 0
 
             return XMLTask(
                 element.getAttribute("id"),
@@ -283,6 +285,7 @@ class XMLTask(
                 getListOf(XMLProcess.INCOMING_LABEL, element),
                 element.getAttribute("name"),
                 affinity,
+                priority
             )
         }
     }

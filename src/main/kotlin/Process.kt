@@ -188,7 +188,8 @@ class Process(file: File) {
                             .map { compatibilities.getValue(it.key) }.flatten(),
                         xmlProcess.transformations.filter { it.value.idActivity == element.id }
                             .map { transformations.getValue(it.key) },
-                        element.affinityWith
+                        element.affinityWith,
+                        element.priority,
                     )
                 }
 

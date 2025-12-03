@@ -47,7 +47,8 @@ class Activity(
     val outputProduct: Place,
     val compatibilities: List<Compatibility>,
     val transformations: List<Transformation>,
-    val affinityWith: String? // Activity with which this activity MUST be use the same executor
+    val affinityWith: String?, // Activity with which this activity MUST be use the same executor
+    val priority: Int,
 ) : BPMNElement(id, value) {
     override fun repeatedProcess(): Sequence<Component> = sequence {
         while (inputs.any { (control, product) -> control.isNotEmpty() && product.isNotEmpty() }) {
@@ -89,7 +90,8 @@ class Activity(
                 productToken,
                 outputControl,
                 outputProduct,
-                id
+                id,
+                priority
             )
             compatibilities.forEach { compatibility ->
                 compatibility.executor.addJob(

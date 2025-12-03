@@ -11,7 +11,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    log.info("ARMS version: 1.3.a")
+    log.info("ARMS version: 1.4.a")
     install(CORS) {
         anyHost()
 
