@@ -8,6 +8,9 @@ import metrics.waitTimeInQueue
 import org.json.JSONException
 import org.json.JSONObject
 import org.kalasim.*
+import scripting.ScriptContext
+import scripting.ScriptingExecutor
+import token.ProductToken
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
@@ -15,11 +18,23 @@ import java.io.PrintWriter
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.minutes
 
+
 fun Environment.totalTime(): Long {
     return (now - startDate).inWholeSeconds / 60
 }
 
 fun main(args: Array<String>) {
+    val executor = ScriptingExecutor()
+    val context = ScriptContext(ProductToken(
+        productRequestId = "1"
+    ))
+    val script = "ctx.productToken.productRequestId == \"1\""
+    println(executor.evalString(script, context))
+    return
+    /// ''''
+
+
+
     val processFile = File(args[0])
     if (!processFile.exists()) {
         error("File: ${args[0]}} not found")

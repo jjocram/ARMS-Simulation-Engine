@@ -6,7 +6,6 @@ import scripting.ScriptContext
 import scripting.ScriptingExecutor
 import token.ProductToken
 import transition.Transition
-import kotlin.random.Random
 
 class ExclusiveSplitCondition(
     val controlOutput: Place,
@@ -37,12 +36,10 @@ class ExclusiveSplitGateway(
                     if (condition.default) {
                         return@Transition id
                     } else {
-//                    val conditionContext = ScriptContext(it.getPlace("inputProduct").tokens.first { token -> token.ids == id } as ProductToken)
-//                    val scriptOutput = scriptingExecutor.evalString(condition.scriptCode, conditionContext).getOrThrow()
+                        val conditionContext = ScriptContext(it.getPlace("inputProduct").tokens.first { token -> token.ids == id } as ProductToken)
+                        val scriptOutput = scriptingExecutor.evalString(condition.scriptCode, conditionContext).getOrThrow()
 
-                        val conditionResult =  Random.nextDouble() <= condition.scriptCode.toDouble() // TODO: fix this: scriptOutput
-
-                        return@Transition if (conditionResult) id else null
+                        return@Transition if (scriptOutput) id else null
                     }
                 } else {
                     return@Transition null

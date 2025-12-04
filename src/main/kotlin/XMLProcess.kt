@@ -136,35 +136,36 @@ class XMLTransformation(
     }
 }
 
-class XMLSequenceFlow(val id: String, val sourceRef: String, val targetRef: String, val name: String?) {
+class XMLSequenceFlow(val id: String, val sourceRef: String, val targetRef: String, val name: String?, val script: String?) {
     companion object {
         fun fromElement(element: Element): XMLSequenceFlow {
             return XMLSequenceFlow(
                 element.getAttribute("id"),
                 element.getAttribute("sourceRef"),
                 element.getAttribute("targetRef"),
-                element.getAttribute("name").ifBlank { null }
+                element.getAttribute("name").ifBlank { null },
+                element.getAttribute("factory:script").ifBlank { null },
             )
         }
     }
 
     fun toCondition(places: Map<String, Place>): ExclusiveSplitCondition {
-        assert(name != null, {"Exclusive split has to have a value assigned"})
         val isDefault = name == "default"
 
         return if (isDefault) {
             ExclusiveSplitCondition(
                 places.getValue(id),
                 places.getValue(id+"_product"),
-                isDefault,
+                true,
                 ""
             )
         } else {
+            require(script != null) { "Exclusive split's SequenceFlow has to have a script assigned" }
             ExclusiveSplitCondition(
                 places.getValue(id),
                 places.getValue(id+"_product"),
-                isDefault,
-                "$name"
+                false,
+                script
             )
         }
     }
